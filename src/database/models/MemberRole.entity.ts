@@ -23,4 +23,8 @@ export class MemberRole {
 
   @CreateDateColumn()
   created_at: Date;
+
+  constructor(partial: Partial<MemberRole>) {
+    Object.assign(this, partial);
+  }
 }

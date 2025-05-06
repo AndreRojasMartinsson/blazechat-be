@@ -1,81 +1,78 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Server } from 'src/database/models/Server.entity';
-import { ServerMember } from 'src/database/models/ServerMember.entity';
 import { Permission, ServerRole } from 'src/database/models/ServerRole.entity';
 import { Repository } from 'typeorm';
 import { ServerInDTO, ServerRoleDTO } from './schemas';
+import { User } from 'src/database/models/User.entity';
+import { ServerMember } from 'src/database/models/ServerMember.entity';
 import { MemberRole } from 'src/database/models/MemberRole.entity';
-import { UsersService } from 'src/users/users.service';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { CreateThreadPayload } from 'src/threads/payloads';
 
 @Injectable()
 export class ServersService {
   constructor(
-    private eventEmitter: EventEmitter2,
-    private userService: UsersService,
     @InjectRepository(Server) private server: Repository<Server>,
-    @InjectRepository(ServerMember)
-    private serverMember: Repository<ServerMember>,
     @InjectRepository(ServerRole)
     private serverRole: Repository<ServerRole>,
     @InjectRepository(MemberRole)
-    private memberRole: Repository<MemberRole>,
+    private roleRepository: Repository<MemberRole>,
+    @InjectRepository(ServerMember)
+    private memberRepository: Repository<ServerMember>,
   ) {}
 
-  async createServer(userId: string, dto: ServerInDTO) {
-    const owner = await this.userService.findOne(userId);
-    if (!owner) throw new UnauthorizedException();
-
+  /**
+   * Creates a server with the specified data and owner,
+   * and returns it.
+   *
+   * @param owner - User class pointing to owner of server
+   * @param dto
+   * @returns created server row
+   */
+  async createServer(owner: User, dto: ServerInDTO): Promise<Server> {
     const row = new Server({
       name: dto.name,
       owner,
     });
 
-    const { identifiers } = await this.server.insert(row);
-    const serverId = identifiers[0].id;
-
-    await this.eventEmitter.emitAsync(
-      'channels.create',
-      new CreateThreadPayload({
-        name: 'global',
-        server_id: serverId,
-      }),
-    );
+    return this.server.save(row);
   }
 
-  async getUserServers(userId: string): Promise<Server[]> {
-    return this.server.find({
-      select: {
-        id: true,
-        name: true,
-        created_at: true,
-        owner: true,
-      },
-      where: {
-        members: {
-          user: {
-            id: userId,
-          },
-        },
-      },
+  /**
+   * Gets a server by it's id and returns it
+   *
+   * @param serverId
+   * @returns server with given `serverId`
+   */
+  async getServerById(serverId: string): Promise<Server> {
+    return this.server.findOneBy({ id: serverId }).then((server) => {
+      if (server === null) throw new NotFoundException('Server not found');
+      return server;
     });
   }
 
+  /**
+   * Gets the members within the specified server
+   *
+   * @param serverId - Id of server to get members from
+   * @returns Server members in the specified server
+   */
   async getServerMembers(serverId: string): Promise<ServerMember[]> {
-    return this.serverMember.find({
+    return this.memberRepository.find({
       where: {
         server: { id: serverId },
       },
+      relations: {
+        roles: true,
+      },
     });
   }
 
+  /**
+   * Gets the roles within the specified server
+   *
+   * @param serverId - Id of server to get roles from
+   * @returns Roles in the specified server
+   */
   async getServerRoles(serverId: string): Promise<ServerRole[]> {
     return this.serverRole.find({
       where: {
@@ -84,64 +81,105 @@ export class ServersService {
     });
   }
 
-  async createRole(serverId: string, roleIn: ServerRoleDTO) {
-    const server = await this.server.findOneBy({ id: serverId });
-    if (!server) throw new NotFoundException();
-
+  /**
+   * Creates a new server role within the specified server
+   *
+   * @param server - Server class pointing to server to create role in
+   * @param roleIn - DTO class with role data
+   * @returns created server role row
+   */
+  async createServerRole(
+    server: Server,
+    roleIn: ServerRoleDTO,
+  ): Promise<ServerRole> {
     const row = new ServerRole({
       server,
-      permissions: roleIn.permission,
-      color: roleIn.color,
-      name: roleIn.name,
+      ...roleIn,
     });
 
-    await this.serverRole.insert(row);
+    return this.serverRole.save(row);
   }
 
-  async isOwner(serverId: string, userId: string): Promise<boolean> {
-    const server = await this.server.findOne({
-      where: { id: serverId },
-      relations: { owner: true },
-    });
-    if (!server) throw new NotFoundException();
-
-    return server.owner.id === userId;
-  }
-
-  async updateRole(serverId: string, roleId: string, roleIn: ServerRoleDTO) {
+  /**
+   * Updates a given server role
+   *
+   * @param roleId - Id of role to update
+   * @param roleIn - Object to patch role with
+   */
+  async updateServerRole(roleId: string, roleIn: ServerRoleDTO) {
     await this.serverRole.update(
       {
         id: roleId,
-        server: { id: serverId },
       },
-      new ServerRole({
-        name: roleIn.name,
-        permissions: roleIn.permission,
-        color: roleIn.color,
-      }),
+      new ServerRole(roleIn),
     );
   }
 
-  async deleteRole(serverId: string, roleId: string) {
-    return this.serverRole.delete({ id: roleId, server: { id: serverId } });
+  /**
+   * Deletes a role
+   *
+   * @param roleId - Id of role to delete
+   */
+  async deleteServerRole(roleId: string) {
+    await this.serverRole.delete({ id: roleId });
   }
 
-  async getMemberRoles(
+  /**
+   * Returns the member from given member id.
+   *
+   * @throws
+   * @param memberId - Id of member to get the roles of
+   * @returns {Promise<ServerMember>} - The specified member
+   */
+  async getMember(memberId: string): Promise<ServerMember> {
+    return this.memberRepository
+      .findOne({
+        where: {
+          id: memberId,
+        },
+        relations: { roles: true },
+      })
+      .then((member) => {
+        if (!member) throw new NotFoundException('Member not found');
+        return member;
+      });
+  }
+
+  /**
+   * Gets a server member within a given server by their
+   * user id.
+   *
+   * @param serverId - Id of server to look in
+   * @param userId - Id of user to use
+   * @returns {Promise<ServerMember>}
+   */
+  async getMemberFromUserId(
     serverId: string,
-    memberId: string,
-  ): Promise<MemberRole[]> {
-    return this.memberRole.find({
-      where: {
-        member: { id: memberId, server: { id: serverId } },
-      },
-    });
+    userId: string,
+  ): Promise<ServerMember> {
+    return this.memberRepository
+      .findOneBy({
+        server: { id: serverId },
+        user: { id: userId },
+      })
+      .then((member) => {
+        if (member === null) throw new NotFoundException('Member not found');
+
+        return member;
+      });
   }
 
-  /* Gets the computed member permission bits */
-  async getMemberPermissions(serverId: string, memberId: string) {
-    const data = await this.memberRole.find({
+  /**
+   * @param memberId - Id of member to get permissions from
+   * @returns Total computed permission bits of member
+   */
+  async getMemberPermissions(memberId: string): Promise<number> {
+    const data = await this.roleRepository.find({
+      select: {
+        role: { permissions: true },
+      },
       where: {
-        member: { id: memberId, server: { id: serverId } },
+        member: { id: memberId },
       },
       relations: {
         role: true,
@@ -151,27 +189,99 @@ export class ServersService {
     return data.reduce((acc, row) => acc | row.role.permissions, 0);
   }
 
-  async getMemberIdFromUserId(
-    serverId: string,
-    userId: string,
-  ): Promise<string | undefined> {
-    const member = await this.serverMember.findOne({
-      where: {
-        user: { id: userId },
-        server: { id: serverId },
-      },
-    });
-
-    return member?.id;
-  }
-
-  async doesMemberHavePermissionTo(
-    serverId: string,
+  /**
+   * Checks if a member has a given permission bit set
+   *
+   * @param memberId - Id of member to get permissions of
+   * @param permission - Permission bit to check against
+   * @returns if member has permission bit set
+   */
+  async doesMemberHavePermission(
     memberId: string,
     permission: Permission,
-  ) {
-    const memberPerms = await this.getMemberPermissions(serverId, memberId);
+  ): Promise<boolean> {
+    const memberPerms = await this.getMemberPermissions(memberId);
 
     return (memberPerms & permission) === permission;
+  }
+
+  /**
+   * Assigns the member a server role
+   *
+   * @throws
+   * @param memberId - Id of member to assign role to
+   * @param role - Id of the ServerRole to assign to member
+   * @returns {Promise<MemberRole>} Newly assigned member role
+   */
+  async assignRole(memberId: string, role: ServerRole): Promise<MemberRole> {
+    const member = await this.getMember(memberId);
+
+    const row = new MemberRole({
+      role,
+      member,
+    });
+
+    return this.roleRepository.save(row);
+  }
+
+  /**
+   * Unassigns the member's server role.
+   *
+   * @throws
+   * @param memberId - Id of member to unassign role from
+   * @param roleId - Id of the MemberRole to unassign
+   */
+  async unassignRole(memberId: string, roleId: string) {
+    await this.roleRepository.delete({ id: roleId, member: { id: memberId } });
+  }
+
+  /**
+   * Updates a server member by the given patch.
+   *
+   * @throws
+   * @param memberId - Id of member to update
+   * @param patch - ServerMember class containing new values to patch
+   */
+  async updateMember(memberId: string, patch: ServerMember) {
+    await this.memberRepository.update(
+      {
+        id: memberId,
+      },
+      patch,
+    );
+  }
+
+  /**
+   * Deletes the server member by their id
+   *
+   * @throws
+   * @param memberId - Id of member to delete
+   */
+  async deleteMember(memberId: string) {
+    await this.memberRepository.delete({ id: memberId });
+  }
+
+  /**
+   * Creates a new server member in the given server
+   * for the specified user.
+   *
+   * @throws
+   * @param server - Server to create member in
+   * @param user - User of the member
+   * @param nickname - Optional nickname of the member
+   * @returns {Promise<ServerMember>} Created row
+   */
+  async createMember(
+    server: Server,
+    user: User,
+    nickname?: string,
+  ): Promise<ServerMember> {
+    const row = new ServerMember({
+      server,
+      user,
+      nickname,
+    });
+
+    return this.memberRepository.save(row);
   }
 }

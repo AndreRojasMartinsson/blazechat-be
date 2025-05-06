@@ -5,17 +5,40 @@ import {
   SetMetadata,
   UnauthorizedException,
 } from '@nestjs/common';
-import { FastifyRequest } from 'fastify';
+import { FastifyReply, FastifyRequest } from 'fastify';
 import * as jwt from '@node-rs/jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
+import { JwtUserPayload, JwtUserPayloadSchema } from './schemas';
+import { AuthService } from './auth.service';
+
+type Request = FastifyRequest & {
+  user: JwtUserPayload;
+};
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private configService: ConfigService,
+    private authService: AuthService,
     private reflector: Reflector,
-  ) { }
+  ) {}
+
+  async verifyAccessToken(token: string): Promise<JwtUserPayload | undefined> {
+    const jwtSecret = this.configService.getOrThrow<string>('secrets.jwt');
+
+    try {
+      const payload = await jwt.verify(token, jwtSecret, {
+        aud: ['https://blazechat.se'],
+        iss: ['blazechat.se-prod'],
+        validateExp: true,
+      });
+
+      return JwtUserPayloadSchema.parse(payload);
+    } catch {
+      return undefined;
+    }
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
@@ -25,35 +48,46 @@ export class AuthGuard implements CanActivate {
 
     if (isPublic) return true;
 
-    const request = context.switchToHttp().getRequest() as FastifyRequest & {
-      user: Record<string, any>;
-    };
+    const request = context.switchToHttp().getRequest<Request>();
+    const reply = context.switchToHttp().getResponse<FastifyReply>();
 
     let token: string | undefined = undefined;
 
-    if (request.cookies?.["blaze_at"]) {
-      token = request.cookies?.["blaze_at"]
+    if (request.cookies?.['blaze_at']) {
+      token = request.cookies?.['blaze_at'];
     } else {
-      token = this.extractTokenFromHeader(request)
+      token = this.extractTokenFromHeader(request);
     }
 
-    if (!token) {
-      throw new UnauthorizedException();
+    // Verify access token
+    const accessPayload = await this.verifyAccessToken(token ?? '');
+    if (accessPayload) {
+      // Valid access token, we can continue
+      request['user'] = accessPayload;
+      return true;
     }
 
-    try {
-      const jwtSecret = this.configService.getOrThrow<string>('secrets.jwt');
-      const payload = await jwt.verify(token, jwtSecret, {
-        aud: ['https://blazechat.se'],
-        iss: ['blazechat.se-prod'],
-        // TODO: SET THIS TO TRUE FOR PROD
-        validateExp: false,
-      });
+    // Get and verify refresh token
+    const refreshToken = request.cookies?.['blaze_rt'] ?? '';
+    const userId = await this.authService.verifyRefreshToken(refreshToken);
 
-      request['user'] = payload;
-    } catch {
-      throw new UnauthorizedException();
-    }
+    // If invalid refresh token we throw unauthorized.
+    if (!userId) throw new UnauthorizedException();
+
+    // Create a new access token since refresh token is valid
+    const newAccessToken = await this.authService.createAccessToken(userId);
+
+    request['user'] = (await this.verifyAccessToken(newAccessToken))!;
+
+    reply.setCookie('blaze_at', newAccessToken, {
+      path: '/',
+      sameSite: 'lax',
+      secure: false,
+      httpOnly: true,
+      maxAge: 3600,
+    });
+
+    request.cookies['blaze_at'] = newAccessToken;
 
     return true;
   }

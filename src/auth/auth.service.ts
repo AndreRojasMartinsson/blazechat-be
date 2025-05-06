@@ -73,6 +73,10 @@ export class AuthService {
     return token;
   }
 
+  async verifyRefreshToken(refreshToken: string): Promise<string | null> {
+    return this.cacheManager.get<string>(`rt_backref_${refreshToken}`);
+  }
+
   async isValidRefreshToken(refreshToken: string): Promise<boolean>;
   async isValidRefreshToken(user: User, refreshToken: string): Promise<boolean>;
   async isValidRefreshToken(

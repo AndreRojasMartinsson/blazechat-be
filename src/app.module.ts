@@ -34,18 +34,18 @@ import { BullModule } from '@nestjs/bullmq';
       throttlers: [{ ttl: 60_000, limit: 10 }],
     }),
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, "..", "public"),
-      exclude: ["/api/{*test}"],
+      rootPath: join(__dirname, '..', 'public'),
+      exclude: ['/api/{*test}'],
       serveStaticOptions: {
         cacheControl: true,
-        fallthrough: false
-      }
+        fallthrough: false,
+      },
     }),
     BullModule.forRoot({
       connection: {
-        host: "localhost",
-        port: 6379
-      }
+        host: 'localhost',
+        port: 6379,
+      },
     }),
     EventEmitterModule.forRoot(),
     ConfigModule.forRoot({
@@ -97,7 +97,6 @@ import { BullModule } from '@nestjs/bullmq';
       useClass: PermissionGuard,
     },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
-
   ],
 })
-export class AppModule { }
+export class AppModule {}

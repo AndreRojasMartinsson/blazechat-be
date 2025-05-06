@@ -8,5 +8,6 @@ import { EmailModule } from 'src/email/email.module';
   imports: [UsersModule, EmailModule],
   controllers: [AuthController],
   providers: [AuthService],
+  exports: [AuthService],
 })
-export class AuthModule { }
+export class AuthModule {}

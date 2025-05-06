@@ -10,7 +10,15 @@
 
 <br/>
 
+## Local Development
+
+To use port 80 in local development (in case it errors) run this command:
+```bash
+$ sudo setcap cap_net_bind_service=+ep `readlink -f \`which node\``
+```
+
 ## Project setup
+
 
 ### Database SSL Certificate
 
