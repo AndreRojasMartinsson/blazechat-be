@@ -15,7 +15,7 @@ export class AuthGuard implements CanActivate {
   constructor(
     private configService: ConfigService,
     private reflector: Reflector,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
@@ -28,7 +28,15 @@ export class AuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest() as FastifyRequest & {
       user: Record<string, any>;
     };
-    const token = this.extractTokenFromHeader(request);
+
+    let token: string | undefined = undefined;
+
+    if (request.cookies?.["blaze_at"]) {
+      token = request.cookies?.["blaze_at"]
+    } else {
+      token = this.extractTokenFromHeader(request)
+    }
+
     if (!token) {
       throw new UnauthorizedException();
     }

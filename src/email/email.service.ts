@@ -33,9 +33,9 @@ export class EmailService {
   }
 
   @OnEvent("auth.emails.send_confirmation")
-  async sendConfirmationEmail(payload: User) {
+  async sendConfirmationEmail({ payload, redirect }: { payload: User, redirect: string }) {
     const siteUrl = this.configService.getOrThrow<string>("secrets.site_url");
-    const verificationUrl = `${siteUrl}/auth/verify?t=${encodeURIComponent(payload.email_verification_token!)}`
+    const verificationUrl = `${siteUrl}/auth/verify?t=${encodeURIComponent(payload.email_verification_token!)}&redirect=${redirect}`
 
     const src = await this.parseTemplate("confirm-email", { URL: verificationUrl, EMAIL: payload.email, USERNAME: payload.username })
 

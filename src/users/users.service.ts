@@ -1,4 +1,6 @@
 import {
+  ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -24,6 +26,23 @@ export class UsersService {
     return this.users.find();
   }
 
+  async findOneByEmailToken(emailToken: string): Promise<User | null> {
+    return this.users.findOneBy({ email_verification_token: emailToken })
+  }
+
+  async confirmEmail(user: User) {
+    if (user.email_confirmed) throw new ForbiddenException()
+
+    await this.users.update({
+      id: user.id,
+      email_verification_token: user.email_verification_token,
+      email_confirmed: false
+    }, {
+      email_confirmed: true
+    })
+
+  }
+
   async doesAccountExist(email: string, username: string): Promise<boolean> {
     const handles = [
       this.users.existsBy({ email }),
@@ -43,9 +62,9 @@ export class UsersService {
       hashed_password: hashedPassword,
     })
 
-    const res = await this.users.insert(row)
+    await this.users.insert(row)
 
-    return new User({ ...res.generatedMaps[0] })
+    return row
   }
 
   async findOne(id: string): Promise<User | null> {
