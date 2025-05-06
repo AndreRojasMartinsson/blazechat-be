@@ -22,6 +22,7 @@ import { PermissionGuard } from './servers/permission.guard';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThreadsModule } from './threads/threads.module';
 import { LoggerModule } from './logger/logger.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { LoggerModule } from './logger/logger.module';
     ServersModule,
     ThreadsModule,
     LoggerModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [
