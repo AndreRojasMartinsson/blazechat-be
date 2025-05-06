@@ -10,11 +10,15 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { SignUpDTO } from './schemas';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Queue } from 'bullmq';
+import { InjectQueue } from '@nestjs/bullmq';
 
 @Injectable()
 export class AuthService {
   constructor(
     private eventEmitter: EventEmitter2,
+    @InjectQueue("email")
+    private emailQueue: Queue,
     private usersService: UsersService,
     private configService: ConfigService,
     @Inject(CACHE_MANAGER)
@@ -223,10 +227,10 @@ export class AuthService {
     const emailToken = this.createEmailToken()
     const user = await this.usersService.createUser(dto, hashedPassword, emailToken)
 
-    console.log(user);
 
+    await this.emailQueue.add("send-email", { payload: { user, redirect }, template: "confirm-email" })
 
-    await this.eventEmitter.emitAsync("auth.emails.send_confirmation", { payload: user, redirect })
+    //await this.eventEmitter.emitAsync("auth.emails.send_confirmation", { payload: user, redirect })
 
     return user
   }

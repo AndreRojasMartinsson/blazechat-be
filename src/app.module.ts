@@ -26,6 +26,7 @@ import { EmailModule } from './email/email.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import emailConfig from './config/email.config';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
@@ -38,6 +39,12 @@ import emailConfig from './config/email.config';
       serveStaticOptions: {
         cacheControl: true,
         fallthrough: false
+      }
+    }),
+    BullModule.forRoot({
+      connection: {
+        host: "localhost",
+        port: 6379
       }
     }),
     EventEmitterModule.forRoot(),
@@ -90,6 +97,7 @@ import emailConfig from './config/email.config';
       useClass: PermissionGuard,
     },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+
   ],
 })
 export class AppModule { }

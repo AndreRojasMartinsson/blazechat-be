@@ -1,0 +1,85 @@
+import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { Job } from "bullmq";
+import { User } from "src/database/models/User.entity";
+
+import * as nodemailer from "nodemailer"
+import { ConfigService } from "@nestjs/config";
+import { catchError, firstValueFrom } from "rxjs";
+import { AxiosError } from "axios";
+import { Logger } from "@nestjs/common";
+import { HttpService } from "@nestjs/axios";
+
+@Processor("email")
+export class EmailProcessor extends WorkerHost {
+  private readonly siteUrl: string
+  private readonly logger = new Logger(EmailProcessor.name)
+
+  constructor(private configService: ConfigService, private httpService: HttpService) {
+    super();
+
+    this.siteUrl = this.configService.getOrThrow<string>("secrets.site_url");
+  }
+
+  private async sendEmail(to: string, subject: string, src: string) {
+    const transporter = nodemailer.createTransport({
+      host: this.configService.getOrThrow<string>("email.host"),
+      port: this.configService.getOrThrow<number>("email.port"),
+      secure: true,
+      auth: {
+        user: this.configService.getOrThrow<string>("email.user"),
+        pass: this.configService.getOrThrow<string>("email.pass"),
+      }
+    })
+
+    await transporter.sendMail({
+      from: '"BlazeChat - No Reply" <noreply@activework.se>',
+      to,
+      subject,
+      html: src
+    })
+  }
+
+  async parseTemplate(name: string, params: Record<string, string>): Promise<string> {
+    const siteUrl = this.configService.getOrThrow<string>("secrets.site_url");
+
+    const path = `${siteUrl}/templates/${name}.html`;
+    const response = await firstValueFrom(this.httpService.get<string>(path).pipe(
+      catchError((error: AxiosError) => {
+        this.logger.error(error.response?.data);
+        throw "An error occured!"
+      })
+    ));
+    const templateSource = response.data;
+
+    return templateSource.replace(/\{\{%(.+?)%\}\}/g, (_, rawKey: string) => {
+      const key = rawKey.trim();
+
+      return key in params ? params[key] : _
+    })
+
+  }
+
+  async sendConfirmEmail(payload: User, redirect: string) {
+    const verificationUrl = `${this.siteUrl}/auth/verify?t=${encodeURIComponent(payload.email_verification_token!)}&redirect=${redirect}`
+
+    const src = await this.parseTemplate("confirm-email", { URL: verificationUrl, EMAIL: payload.email, USERNAME: payload.username })
+
+    await this.sendEmail(payload.email, "Confirm your email - BlazeChat", src)
+
+  }
+
+  async process(job: Job<{ payload: { user: User, redirect?: string }, template: "confirm-email" }, any, string>) {
+    const { payload, template } = job.data
+
+    switch (template) {
+      case "confirm-email":
+        await this.sendConfirmEmail(payload.user, payload.redirect!);
+        break;
+    }
+
+
+
+
+    await job.updateProgress(100)
+  }
+}

@@ -1,11 +1,8 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { OnEvent } from '@nestjs/event-emitter';
 import { AxiosError } from 'axios';
 import { catchError, firstValueFrom } from 'rxjs';
-import { User } from 'src/database/models/User.entity';
-import * as nodemailer from "nodemailer"
 
 @Injectable()
 export class EmailService {
@@ -32,28 +29,12 @@ export class EmailService {
 
   }
 
-  @OnEvent("auth.emails.send_confirmation")
-  async sendConfirmationEmail({ payload, redirect }: { payload: User, redirect: string }) {
-    const siteUrl = this.configService.getOrThrow<string>("secrets.site_url");
-    const verificationUrl = `${siteUrl}/auth/verify?t=${encodeURIComponent(payload.email_verification_token!)}&redirect=${redirect}`
-
-    const src = await this.parseTemplate("confirm-email", { URL: verificationUrl, EMAIL: payload.email, USERNAME: payload.username })
-
-    const transporter = nodemailer.createTransport({
-      host: this.configService.getOrThrow<string>("email.host"),
-      port: this.configService.getOrThrow<number>("email.port"),
-      secure: true,
-      auth: {
-        user: this.configService.getOrThrow<string>("email.user"),
-        pass: this.configService.getOrThrow<string>("email.pass"),
-      }
-    })
-
-    await transporter.sendMail({
-      from: '"BlazeChat - No Reply" <noreply@activework.se>',
-      to: payload.email,
-      subject: "Confirm your email - BlazeChat",
-      html: src
-    })
-  }
+  //@OnEvent("auth.emails.send_confirmation")
+  //async sendConfirmationEmail({ payload, redirect }: { payload: User, redirect: string }) {
+  //  const siteUrl = this.configService.getOrThrow<string>("secrets.site_url");
+  //  const verificationUrl = `${siteUrl}/auth/verify?t=${encodeURIComponent(payload.email_verification_token!)}&redirect=${redirect}`
+  //
+  //  const src = await this.parseTemplate("confirm-email", { URL: verificationUrl, EMAIL: payload.email, USERNAME: payload.username })
+  //
+  //}
 }
