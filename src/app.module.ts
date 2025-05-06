@@ -29,7 +29,6 @@ import emailConfig from './config/email.config';
 import { BullModule } from '@nestjs/bullmq';
 import { UploadModule } from './upload/upload.module';
 import minioConfig from './config/minio.config';
-import { FastifyMulterModule } from '@nest-lab/fastify-multer';
 
 @Module({
   imports: [

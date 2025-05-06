@@ -1,6 +1,5 @@
 import {
   Body,
-  ClassSerializerInterceptor,
   Controller,
   Delete,
   Get,
@@ -11,7 +10,6 @@ import {
   Post,
   StreamableFile,
   UnauthorizedException,
-  UseInterceptors,
 } from '@nestjs/common';
 import { User, UserRole } from 'src/database/models/User.entity';
 import { UsersService } from './users.service';

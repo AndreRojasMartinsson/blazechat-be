@@ -213,12 +213,17 @@ export class ServersService {
    * Assigns the member a server role
    *
    * @throws
+   * @param serverId - Id of server to operate in
    * @param memberId - Id of member to assign role to
    * @param role - Id of the ServerRole to assign to member
    * @returns {Promise<MemberRole>} Newly assigned member role
    */
-  async assignRole(memberId: string, role: ServerRole): Promise<MemberRole> {
-    const member = await this.getMember(memberId);
+  async assignRole(
+    serverId: string,
+    memberId: string,
+    role: ServerRole,
+  ): Promise<MemberRole> {
+    const member = await this.getMember(serverId, memberId);
 
     const row = new MemberRole({
       role,
