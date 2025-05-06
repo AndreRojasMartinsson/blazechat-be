@@ -3,25 +3,16 @@ import { ServersService } from './servers.service';
 import { ServersController } from './servers.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ServerRole } from 'src/database/models/ServerRole.entity';
-import { ServerThread } from 'src/database/models/ServerThread.entity';
 import { ServerMember } from 'src/database/models/ServerMember.entity';
 import { Server } from 'src/database/models/Server.entity';
 import { MemberRole } from 'src/database/models/MemberRole.entity';
 import { UsersModule } from 'src/users/users.module';
-import { ThreadsModule } from 'src/threads/threads.module';
 import { LoggerModule } from 'src/logger/logger.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      ServerRole,
-      ServerThread,
-      ServerMember,
-      Server,
-      MemberRole,
-    ]),
+    TypeOrmModule.forFeature([ServerRole, ServerMember, Server, MemberRole]),
     UsersModule,
-    ThreadsModule,
     LoggerModule,
   ],
   exports: [ServersService],

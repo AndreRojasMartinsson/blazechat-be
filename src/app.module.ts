@@ -27,7 +27,6 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import emailConfig from './config/email.config';
 import { BullModule } from '@nestjs/bullmq';
-import { MembersModule } from './members/members.module';
 
 @Module({
   imports: [
@@ -76,7 +75,6 @@ import { MembersModule } from './members/members.module';
     ThreadsModule,
     LoggerModule,
     EmailModule,
-    MembersModule,
   ],
   controllers: [AppController],
   providers: [
