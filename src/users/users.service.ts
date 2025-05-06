@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { SignUpDTO } from 'src/auth/schemas';
 import { PendingDeletion } from 'src/database/models/PendingDeletion.entity';
+import { Server } from 'src/database/models/Server.entity';
 import { Suspension } from 'src/database/models/Suspension.entity';
 import { User } from 'src/database/models/User.entity';
 import { Repository } from 'typeorm';
@@ -13,12 +14,19 @@ import { Repository } from 'typeorm';
 @Injectable()
 export class UsersService {
   constructor(
+    @InjectRepository(Server) private serverRepo: Repository<Server>,
     @InjectRepository(User) private users: Repository<User>,
     @InjectRepository(PendingDeletion)
     private pendingDeletion: Repository<PendingDeletion>,
     @InjectRepository(Suspension)
     private suspension: Repository<Suspension>,
   ) {}
+
+  async getServers(userId: string): Promise<Server[]> {
+    return this.serverRepo.find({
+      where: { members: { user: { id: userId } } },
+    });
+  }
 
   async getAll(): Promise<User[]> {
     return this.users.find();

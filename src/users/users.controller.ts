@@ -34,6 +34,11 @@ export class UsersController {
     return this.usersService.deleteUser(payload.sub);
   }
 
+  @Get('/me/servers')
+  async getServers(@AccessToken() payload: JwtUserPayload) {
+    return this.usersService.getServers(payload.sub);
+  }
+
   @Delete('/:id')
   @Roles(UserRole.ROOT, UserRole.ADMIN)
   async deleteUser(@Param('id') userId: string) {
