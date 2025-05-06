@@ -1,4 +1,10 @@
-import { ConflictException, Inject, Injectable, NotAcceptableException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotAcceptableException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import * as argon2 from '@node-rs/argon2';
 import * as jwt from '@node-rs/jsonwebtoken';
@@ -9,21 +15,17 @@ import { randomBytes } from 'node:crypto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { SignUpDTO } from './schemas';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Queue } from 'bullmq';
-import { InjectQueue } from '@nestjs/bullmq';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private eventEmitter: EventEmitter2,
-    @InjectQueue("email")
-    private emailQueue: Queue,
+    private emailService: EmailService,
     private usersService: UsersService,
     private configService: ConfigService,
     @Inject(CACHE_MANAGER)
     private cacheManager: Cache,
-  ) { }
+  ) {}
 
   async createAccessToken(userId: string): Promise<string> {
     const jwtSecret = this.configService.getOrThrow<string>('secrets.jwt');
@@ -51,6 +53,7 @@ export class AuthService {
     const token = randomBytes(128).toString('hex');
 
     const existingRefreshToken = await this.cacheManager.get(`rt_${user.id}`);
+
     // Delete previous token back reference
     if (typeof existingRefreshToken === 'string') {
       await this.cacheManager.del(`rt_backref_${existingRefreshToken}`);
@@ -108,7 +111,10 @@ export class AuthService {
     return access;
   }
 
-  async verify_password(password: string, hashed_password: string): Promise<boolean> {
+  async verify_password(
+    password: string,
+    hashed_password: string,
+  ): Promise<boolean> {
     const passwordSecret =
       this.configService.getOrThrow<string>('secrets.password');
 
@@ -120,7 +126,7 @@ export class AuthService {
       secret: Buffer.from(passwordSecret, 'utf8'),
     });
 
-    return isValid
+    return isValid;
   }
 
   async hash(password: string): Promise<string> {
@@ -135,7 +141,7 @@ export class AuthService {
       secret: Buffer.from(passwordSecret, 'utf8'),
     });
 
-    return hashed
+    return hashed;
   }
 
   async signIn(
@@ -147,8 +153,7 @@ export class AuthService {
 
     if (!dbPassword) throw new UnauthorizedException();
 
-
-    const isValid = this.verify_password(password, dbPassword)
+    const isValid = this.verify_password(password, dbPassword);
     if (!isValid) throw new UnauthorizedException();
 
     const [access, refresh] = await Promise.all([
@@ -171,10 +176,10 @@ export class AuthService {
     const digit = /\d/.test(password);
     const symbol = /[^A-Za-z0-9]/.test(password);
 
-    if (lower) score += 5
-    if (upper) score += 5
-    if (digit) score += 5
-    if (symbol) score += 5
+    if (lower) score += 5;
+    if (upper) score += 5;
+    if (digit) score += 5;
+    if (symbol) score += 5;
 
     const varietyCount = [lower, upper, digit, symbol].filter(Boolean).length;
     if (varietyCount >= 3) score += 2;
@@ -184,7 +189,7 @@ export class AuthService {
 
     score -= this.countSequentialOrRepeated(password) * 2;
 
-    return Math.max(0, Math.min(100, score))
+    return Math.max(0, Math.min(100, score));
   }
 
   countSequentialOrRepeated(str: string): number {
@@ -205,34 +210,39 @@ export class AuthService {
     return penalty;
   }
 
-
   async verifyEmailToken(token: string): Promise<User> {
-    const user = await this.usersService.findOneByEmailToken(token)
-    if (!user) throw new UnauthorizedException()
+    const user = await this.usersService.findOneByEmailToken(token);
+    if (!user) throw new UnauthorizedException();
 
-    await this.usersService.confirmEmail(user)
+    await this.usersService.confirmEmail(user);
 
-    return user
+    return user;
   }
 
   async signUp(dto: SignUpDTO, redirect: string): Promise<User> {
     const passwordStrength = this.checkPasswordStrength(dto.password);
-    if (passwordStrength < 1 || dto.password.length < 8) throw new NotAcceptableException("Password is too weak, please consider using stronger password.")
+    if (passwordStrength < 1 || dto.password.length < 8)
+      throw new NotAcceptableException(
+        'Password is too weak, please consider using stronger password.',
+      );
 
-    const exists = await this.usersService.doesAccountExist(dto.email, dto.username);
+    const exists = await this.usersService.doesAccountExist(
+      dto.email,
+      dto.username,
+    );
     if (exists) throw new ConflictException();
 
     const hashedPassword = await this.hash(dto.password);
 
-    const emailToken = this.createEmailToken()
-    const user = await this.usersService.createUser(dto, hashedPassword, emailToken)
+    const emailToken = this.createEmailToken();
+    const user = await this.usersService.createUser(
+      dto,
+      hashedPassword,
+      emailToken,
+    );
 
+    await this.emailService.addToQueue('confirm-email', { user, redirect });
 
-    await this.emailQueue.add("send-email", { payload: { user, redirect }, template: "confirm-email" })
-
-    //await this.eventEmitter.emitAsync("auth.emails.send_confirmation", { payload: user, redirect })
-
-    return user
+    return user;
   }
-
 }
