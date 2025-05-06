@@ -17,10 +17,32 @@ export class UsersService {
     private pendingDeletion: Repository<PendingDeletion>,
     @InjectRepository(Suspension)
     private suspension: Repository<Suspension>,
-  ) {}
+  ) { }
 
   async getAll(): Promise<User[]> {
     return this.users.find();
+  }
+
+  async doesAccountExist(email: string, username: string): Promise<boolean> {
+    const handles = [
+      this.users.existsBy({ email }),
+      this.users.existsBy({ username }),
+    ]
+
+    const results = await Promise.all(handles)
+    return results.some(Boolean)
+  }
+
+  async createUser(email: string, username: string, hashedPassword: string): Promise<User> {
+    const row = new User({
+      username,
+      email,
+      hashed_password: hashedPassword,
+    })
+
+    const res = await this.users.insert(row)
+
+    return new User({ ...res.generatedMaps[0] })
   }
 
   async findOne(id: string): Promise<User | null> {
