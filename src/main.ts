@@ -25,7 +25,9 @@ async function bootstrap() {
     }),
   );
 
-  app.enableCors();
+  const configService = app.get(ConfigService);
+
+  app.enableCors({ credentials: true, origin: configService.getOrThrow<string>("secrets.site_url") });
   app.enableShutdownHooks();
 
   const config = new DocumentBuilder()
@@ -38,7 +40,6 @@ async function bootstrap() {
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
 
-  const configService = app.get(ConfigService);
 
   await app.register(fastifyCookie, {
     secret: configService.getOrThrow<string>('secrets.cookie'),

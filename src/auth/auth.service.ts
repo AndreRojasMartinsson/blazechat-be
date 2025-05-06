@@ -202,7 +202,16 @@ export class AuthService {
   }
 
 
-  async signUp(dto: SignUpDTO): Promise<User> {
+  async verifyEmailToken(token: string): Promise<User> {
+    const user = await this.usersService.findOneByEmailToken(token)
+    if (!user) throw new UnauthorizedException()
+
+    await this.usersService.confirmEmail(user)
+
+    return user
+  }
+
+  async signUp(dto: SignUpDTO, redirect: string): Promise<User> {
     const passwordStrength = this.checkPasswordStrength(dto.password);
     if (passwordStrength < 1 || dto.password.length < 8) throw new NotAcceptableException("Password is too weak, please consider using stronger password.")
 
@@ -214,7 +223,10 @@ export class AuthService {
     const emailToken = this.createEmailToken()
     const user = await this.usersService.createUser(dto, hashedPassword, emailToken)
 
-    await this.eventEmitter.emitAsync("auth.emails.send_confirmation", user)
+    console.log(user);
+
+
+    await this.eventEmitter.emitAsync("auth.emails.send_confirmation", { payload: user, redirect })
 
     return user
   }
