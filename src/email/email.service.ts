@@ -34,7 +34,10 @@ export class EmailService {
 
   @OnEvent("auth.emails.send_confirmation")
   async sendConfirmationEmail(payload: User) {
-    const src = await this.parseTemplate("confirm-email", { URL: "hello.com", EMAIL: payload.email, USERNAME: payload.username })
+    const siteUrl = this.configService.getOrThrow<string>("secrets.site_url");
+    const verificationUrl = `${siteUrl}/auth/verify?t=${encodeURIComponent(payload.email_verification_token!)}`
+
+    const src = await this.parseTemplate("confirm-email", { URL: verificationUrl, EMAIL: payload.email, USERNAME: payload.username })
 
     const transporter = nodemailer.createTransport({
       host: this.configService.getOrThrow<string>("email.host"),
