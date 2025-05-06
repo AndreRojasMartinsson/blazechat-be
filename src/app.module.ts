@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -10,7 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { createKeyv } from '@keyv/redis';
 import secretsConfig from './config/secrets.config';
-import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthGuard } from './auth/auth.guard';
 import { RolesGuard } from './users/roles.guard';
 import { SuspensionGuard } from './users/suspension.guard';
@@ -92,6 +92,7 @@ import { FastifyMulterModule } from '@nest-lab/fastify-multer';
       provide: APP_GUARD,
       useClass: RolesGuard,
     },
+    { provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
     {
       provide: APP_GUARD,
       useClass: SuspensionGuard,

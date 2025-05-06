@@ -16,6 +16,7 @@ export class User {
   id: string;
 
   @Column({ unique: true })
+  @Exclude()
   email: string;
 
   @Column()
@@ -29,11 +30,11 @@ export class User {
   bio?: string;
 
   @Column({ default: false })
-  email_confirmed: boolean
+  email_confirmed: boolean;
 
-  @Column({ nullable: true, type: "text" })
+  @Column({ nullable: true, type: 'text' })
   @Exclude()
-  email_verification_token?: string
+  email_verification_token?: string;
 
   @Column({
     type: 'enum',

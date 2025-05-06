@@ -30,7 +30,6 @@ export class UsersController {
     @InjectMinio() private readonly minioClient: Client,
   ) {}
 
-  @UseInterceptors(ClassSerializerInterceptor)
   @Get('/me')
   async getMe(@AccessToken() payload: JwtUserPayload): Promise<User | null> {
     const user = await this.usersService.findOne(payload.sub);

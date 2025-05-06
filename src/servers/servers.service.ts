@@ -128,16 +128,20 @@ export class ServersService {
    * Returns the member from given member id.
    *
    * @throws
-   * @param memberId - Id of member to get the roles of
+   * @param serverId - Id of server member is in
+   * @param memberId - Id of member to get
    * @returns {Promise<ServerMember>} - The specified member
    */
-  async getMember(memberId: string): Promise<ServerMember> {
+  async getMember(serverId: string, memberId: string): Promise<ServerMember> {
     return this.memberRepository
       .findOne({
         where: {
           id: memberId,
+          server: {
+            id: serverId,
+          },
         },
-        relations: { roles: true },
+        relations: { roles: true, user: true },
       })
       .then((member) => {
         if (!member) throw new NotFoundException('Member not found');

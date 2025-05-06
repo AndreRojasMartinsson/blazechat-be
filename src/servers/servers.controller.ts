@@ -1,26 +1,23 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   HttpCode,
   HttpStatus,
   NotFoundException,
   Param,
   Post,
-  Put,
 } from '@nestjs/common';
 import { ServersService } from './servers.service';
 import { HttpStatusCode } from 'axios';
 import { AccessToken } from 'src/utils/request';
 import { JwtUserPayload } from 'src/auth/schemas';
 import { ServerMember } from 'src/database/models/ServerMember.entity';
-import { Permission, ServerRole } from 'src/database/models/ServerRole.entity';
-import { ServerInDTO, ServerRoleDTO } from './schemas';
-import { Perms } from './permission.guard';
+import { ServerInDTO } from './schemas';
 import { LoggerService } from 'src/logger/logger.service';
 import { UsersService } from 'src/users/users.service';
 import { Server } from 'src/database/models/Server.entity';
+import { ServerRole } from 'src/database/models/ServerRole.entity';
 
 @Controller('servers')
 export class ServersController {
@@ -60,6 +57,21 @@ export class ServersController {
     @Param('server_id') serverId: string,
   ): Promise<ServerMember[]> {
     return this.serverService.getServerMembers(serverId);
+  }
+
+  @Get('/:server_id/members/:member_id')
+  @HttpCode(HttpStatusCode.Ok)
+  async getMember(
+    @Param('server_id') serverId: string,
+    @Param('member_id') memberId: string,
+  ): Promise<ServerMember> {
+    return this.serverService.getMember(serverId, memberId);
+  }
+
+  @Get('/:server_id/roles')
+  @HttpCode(HttpStatusCode.Ok)
+  async getRoles(@Param('server_id') serverId: string): Promise<ServerRole[]> {
+    return this.serverService.getServerRoles(serverId);
   }
 
   // @Get('/:server_id/roles')
