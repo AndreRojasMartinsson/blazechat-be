@@ -32,6 +32,7 @@ export class User {
   email_confirmed: boolean
 
   @Column({ nullable: true, type: "text" })
+  @Exclude()
   email_verification_token?: string
 
   @Column({
