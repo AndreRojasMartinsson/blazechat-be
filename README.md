@@ -4,9 +4,9 @@
   <img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" />
 </p>
 
-# ChatBlaze - Backend
+# BlazeChat - Backend
 <br/>
-  <p>The ChatBlaze application backend using <a href="https://nestjs.com">a progressive framework</a> for building efficient and scalable server-side applications.</p>
+  <p>The BlazeChat application backend using <a href="https://nestjs.com">a progressive framework</a> for building efficient and scalable server-side applications.</p>
 
 <br/>
 
@@ -88,10 +88,10 @@ Check out a few resources that may come in handy when working with NestJS:
 
 ## Stay in touch
 
-- Author - [Andr‚ Rojas Martinsson](https://github.com/AndreRojasMartinsson)
+- Author - [Andrâ€š Rojas Martinsson](https://github.com/AndreRojasMartinsson)
 - Website - [https://chat.activework.se](https://chat.activework.se)
 
 ## License
 
-ChatBlaze Backend is [MIT licensed](https://github.com/AndreRojasMartinsson/chatblaze-be/blob/master/LICENSE).
+BlazeChat Backend is [MIT licensed](https://github.com/AndreRojasMartinsson/blazechat-be/blob/master/LICENSE).
 
