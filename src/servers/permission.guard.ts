@@ -7,9 +7,9 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Permission } from 'src/database/models/ServerRole.entity';
-import { ServersService } from './servers.service';
 import { JwtUserPayloadSchema } from 'src/auth/schemas';
 import z from 'zod';
+import { MembersService } from 'src/members/members.service';
 
 export const PERMISSION_KEY = 'required_permissions';
 export const Perms = (...permissions: Permission[]) =>
@@ -21,7 +21,7 @@ const JwtPayloadRequest = z.object({ user: JwtUserPayloadSchema });
 export class PermissionGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
-    private serverService: ServersService,
+    private memberService: MembersService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -46,18 +46,14 @@ export class PermissionGuard implements CanActivate {
       throw new ForbiddenException();
     }
 
-    const memberId = await this.serverService.getMemberIdFromUserId(
-      serverId,
-      userId,
-    );
+    const member = await this.memberService.getFromUserId(serverId, userId);
 
-    if (!memberId) {
+    if (!member.id) {
       throw new ForbiddenException();
     }
 
-    const hasPermission = await this.serverService.doesMemberHavePermissionTo(
-      serverId,
-      memberId,
+    const hasPermission = await this.memberService.doesMemberHavePermission(
+      member.id,
       requiredPermissions.reduce((acc, perm) => acc | perm, 0),
     );
 
