@@ -25,6 +25,7 @@ import { LoggerModule } from './logger/logger.module';
 import { EmailModule } from './email/email.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import emailConfig from './config/email.config';
 
 @Module({
   imports: [
@@ -43,7 +44,7 @@ import { join } from 'path';
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,
-      load: [databaseConfig, secretsConfig],
+      load: [databaseConfig, secretsConfig, emailConfig],
     }),
     databaseProvider,
     SentryModule.forRoot(),
