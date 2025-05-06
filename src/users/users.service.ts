@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { SignUpDTO } from 'src/auth/schemas';
 import { PendingDeletion } from 'src/database/models/PendingDeletion.entity';
 import { Suspension } from 'src/database/models/Suspension.entity';
 import { User } from 'src/database/models/User.entity';
@@ -33,10 +34,12 @@ export class UsersService {
     return results.some(Boolean)
   }
 
-  async createUser(email: string, username: string, hashedPassword: string): Promise<User> {
+  async createUser(dto: SignUpDTO, hashedPassword: string, emailToken: string): Promise<User> {
     const row = new User({
-      username,
-      email,
+      username: dto.username,
+      email: dto.email,
+      email_verification_token: emailToken,
+      email_confirmed: false,
       hashed_password: hashedPassword,
     })
 
