@@ -12,13 +12,10 @@ import { SignInDTO } from './schemas';
 import { FastifyReply } from 'fastify';
 import { Public } from './auth.guard';
 import { AllowSuspended } from 'src/users/suspension.guard';
-import * as nodemailer from 'nodemailer';
-import { render } from '@react-email/components';
-import ConfirmEmail from 'blazechat-emails/emails/confirm-email';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @HttpCode(HttpStatus.OK)
   @Post('/login')
@@ -43,24 +40,5 @@ export class AuthController {
     });
 
     return access;
-  }
-
-  @HttpCode(HttpStatus.OK)
-  @Post('/hey')
-  @Public()
-  @AllowSuspended()
-  async test() {
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.strato.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: 'noreply@activework.se',
-        password:
-          '5@8kdnN^36YCQQYTF6HaethsP#8ssF9XDmPzFTXX3iijzzgGSaN*!a^frRnJ8odV',
-      },
-    });
-
-    const emailHtml = await render(<ConfirmEmail />);
   }
 }
