@@ -1,11 +1,35 @@
-import { IsNotEmpty } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 import * as z from 'zod';
 
 export class SignInDTO {
   @IsNotEmpty()
+  @IsString()
+  @Matches(/^(?!.*_.*_)(?!_)(?!.*_$)[A-Za-z0-9_]+$/g)
+  @MinLength(3)
+  @MaxLength(20)
   username: string;
 
   @IsNotEmpty()
+  @IsString()
+  password: string;
+}
+
+export class SignUpDTO {
+  @IsNotEmpty()
+  @IsString()
+  @IsEmail()
+  email: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @Matches(/^(?!.*_.*_)(?!_)(?!.*_$)[A-Za-z0-9_]+$/g)
+  @MinLength(3)
+  @MaxLength(20)
+  username: string;
+
+  @IsNotEmpty()
+  @MaxLength(512)
+  @IsString()
   password: string;
 }
 

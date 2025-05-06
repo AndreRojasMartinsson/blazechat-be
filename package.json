@@ -34,6 +34,7 @@
     "@nestjs/event-emitter": "^3.0.1",
     "@nestjs/platform-fastify": "^11.1.0",
     "@nestjs/schedule": "^6.0.0",
+    "@nestjs/serve-static": "^5.0.3",
     "@nestjs/swagger": "^11.2.0",
     "@nestjs/terminus": "^11.0.0",
     "@nestjs/throttler": "^6.4.0",
@@ -47,12 +48,13 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "fastify": "^5.3.2",
+    "nodemailer": "^7.0.2",
+    "pg": "^8.15.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "typeorm": "^0.3.22",
-    "pg": "^8.15.6",
     "zod": "^4.0.0-beta.20250505T012514"
   },
   "devDependencies": {

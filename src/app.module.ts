@@ -22,17 +22,29 @@ import { PermissionGuard } from './servers/permission.guard';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThreadsModule } from './threads/threads.module';
 import { LoggerModule } from './logger/logger.module';
+import { EmailModule } from './email/email.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+import emailConfig from './config/email.config';
 
 @Module({
   imports: [
     ThrottlerModule.forRoot({
       throttlers: [{ ttl: 60_000, limit: 10 }],
     }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, "..", "public"),
+      exclude: ["/api/{*test}"],
+      serveStaticOptions: {
+        cacheControl: true,
+        fallthrough: false
+      }
+    }),
     EventEmitterModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,
-      load: [databaseConfig, secretsConfig],
+      load: [databaseConfig, secretsConfig, emailConfig],
     }),
     databaseProvider,
     SentryModule.forRoot(),
@@ -55,6 +67,7 @@ import { LoggerModule } from './logger/logger.module';
     ServersModule,
     ThreadsModule,
     LoggerModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [
@@ -79,4 +92,4 @@ import { LoggerModule } from './logger/logger.module';
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
-export class AppModule {}
+export class AppModule { }

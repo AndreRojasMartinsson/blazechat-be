@@ -3,7 +3,6 @@ import { Suspension } from './Suspension.entity';
 import { Exclude } from 'class-transformer';
 import { Server } from './Server.entity';
 import { ServerMember } from './ServerMember.entity';
-import { Friendship } from './Friendship.entity';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -28,6 +27,13 @@ export class User {
 
   @Column({ nullable: true })
   bio?: string;
+
+  @Column({ default: false })
+  email_confirmed: boolean
+
+  @Column({ nullable: true, type: "text" })
+  @Exclude()
+  email_verification_token?: string
 
   @Column({
     type: 'enum',
