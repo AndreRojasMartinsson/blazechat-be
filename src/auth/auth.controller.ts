@@ -8,7 +8,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { SignInDTO } from './schemas';
+import { SignInDTO, SignUpDTO } from './schemas';
 import { FastifyReply } from 'fastify';
 import { Public } from './auth.guard';
 import { AllowSuspended } from 'src/users/suspension.guard';
@@ -25,8 +25,6 @@ export class AuthController {
     @Res({ passthrough: true }) response: FastifyReply,
     @Body() payload: SignInDTO,
   ): Promise<string> {
-    if (!payload.username || !payload.password) throw new BadRequestException();
-
     const { access, refresh } = await this.authService.signIn(
       payload.username,
       payload.password,
@@ -40,5 +38,13 @@ export class AuthController {
     });
 
     return access;
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post("/register")
+  @Public()
+  @AllowSuspended()
+  async signUp(@Body() dto: SignUpDTO) {
+    await this.authService.signUp(dto);
   }
 }
