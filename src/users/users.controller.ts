@@ -4,8 +4,12 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
+  HttpCode,
+  HttpStatus,
   Param,
   Post,
+  StreamableFile,
   UnauthorizedException,
   UseInterceptors,
 } from '@nestjs/common';
@@ -16,10 +20,15 @@ import { Roles } from './roles.guard';
 import { SuspendUserDTO } from './schema';
 import { AllowSuspended } from './suspension.guard';
 import { JwtUserPayload } from 'src/auth/schemas';
+import { InjectMinio } from 'nestjs-minio';
+import { Client } from 'minio';
 
 @Controller('users')
 export class UsersController {
-  constructor(private usersService: UsersService) {}
+  constructor(
+    private usersService: UsersService,
+    @InjectMinio() private readonly minioClient: Client,
+  ) {}
 
   @UseInterceptors(ClassSerializerInterceptor)
   @Get('/me')
@@ -37,6 +46,19 @@ export class UsersController {
   @Get('/me/servers')
   async getServers(@AccessToken() payload: JwtUserPayload) {
     return this.usersService.getServers(payload.sub);
+  }
+
+  @Get('/me/avatar')
+  @HttpCode(HttpStatus.OK)
+  @Header('Content-Type', 'image/jpeg')
+  async getAvatar(@AccessToken() payload: JwtUserPayload) {
+    const userId = payload.sub;
+    const obj = await this.minioClient.getObject(
+      'blazechat-avatars',
+      `avatar_${userId}.jpeg`,
+    );
+
+    return new StreamableFile(obj);
   }
 
   @Delete('/:id')

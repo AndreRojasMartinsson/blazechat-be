@@ -27,6 +27,9 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import emailConfig from './config/email.config';
 import { BullModule } from '@nestjs/bullmq';
+import { UploadModule } from './upload/upload.module';
+import minioConfig from './config/minio.config';
+import { FastifyMulterModule } from '@nest-lab/fastify-multer';
 
 @Module({
   imports: [
@@ -51,7 +54,7 @@ import { BullModule } from '@nestjs/bullmq';
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,
-      load: [databaseConfig, secretsConfig, emailConfig],
+      load: [databaseConfig, secretsConfig, emailConfig, minioConfig],
     }),
     databaseProvider,
     SentryModule.forRoot(),
@@ -75,6 +78,7 @@ import { BullModule } from '@nestjs/bullmq';
     ThreadsModule,
     LoggerModule,
     EmailModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [

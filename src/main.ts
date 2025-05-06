@@ -6,11 +6,12 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import { ConsoleLogger, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import fastifyCookie from '@fastify/cookie';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from '@fastify/helmet';
+import fastifyMultipart from '@fastify/multipart';
 
 declare const module: any;
 
@@ -47,6 +48,8 @@ async function bootstrap() {
     parseOptions: { httpOnly: true, sameSite: 'lax', secure: false, path: '/' },
     secret: configService.getOrThrow<string>('secrets.cookie'),
   });
+
+  await app.register(fastifyMultipart);
 
   await app.register(helmet, {
     contentSecurityPolicy: {

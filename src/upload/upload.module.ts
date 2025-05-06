@@ -1,17 +1,11 @@
 import { Module } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { UsersController } from './users.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from 'src/database/models/User.entity';
-import { PendingDeletion } from 'src/database/models/PendingDeletion.entity';
-import { Suspension } from 'src/database/models/Suspension.entity';
-import { Server } from 'src/database/models/Server.entity';
+import { UploadService } from './upload.service';
+import { UploadController } from './upload.controller';
 import { NestMinioModule } from 'nestjs-minio';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, PendingDeletion, Suspension, Server]),
     NestMinioModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -25,8 +19,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       }),
     }),
   ],
-  providers: [UsersService],
-  exports: [UsersService],
-  controllers: [UsersController],
+  providers: [UploadService],
+  controllers: [UploadController],
 })
-export class UsersModule {}
+export class UploadModule {}
