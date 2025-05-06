@@ -26,7 +26,7 @@ export class ServerRoleDTO {
   @ApiProperty()
   @IsNumber()
   @IsNotEmpty()
-  permission: Permission;
+  permissions: Permission;
 }
 
 export class ServerInDTO {
