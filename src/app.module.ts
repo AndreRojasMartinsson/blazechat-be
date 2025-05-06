@@ -1,0 +1,82 @@
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
+import databaseConfig from './config/database.config';
+import { CacheModule } from '@nestjs/cache-manager';
+import { ScheduleModule } from '@nestjs/schedule';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { createKeyv } from '@keyv/redis';
+import secretsConfig from './config/secrets.config';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { AuthGuard } from './auth/auth.guard';
+import { RolesGuard } from './users/roles.guard';
+import { SuspensionGuard } from './users/suspension.guard';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { HealthModule } from './health/health.module';
+import { ServersModule } from './servers/servers.module';
+import databaseProvider from './database/database.provider';
+import { PermissionGuard } from './servers/permission.guard';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ThreadsModule } from './threads/threads.module';
+import { LoggerModule } from './logger/logger.module';
+
+@Module({
+  imports: [
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: 60_000, limit: 10 }],
+    }),
+    EventEmitterModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      expandVariables: true,
+      load: [databaseConfig, secretsConfig],
+    }),
+    databaseProvider,
+    SentryModule.forRoot(),
+    ScheduleModule.forRoot(),
+    CacheModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      isGlobal: true,
+      useFactory: (configService: ConfigService) => {
+        return {
+          stores: [
+            createKeyv(configService.getOrThrow<string>('database.redis')),
+          ],
+        };
+      },
+    }),
+    AuthModule,
+    UsersModule,
+    HealthModule,
+    ServersModule,
+    ThreadsModule,
+    LoggerModule,
+  ],
+  controllers: [AppController],
+  providers: [
+    { provide: APP_FILTER, useClass: SentryGlobalFilter },
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: SuspensionGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: PermissionGuard,
+    },
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
+})
+export class AppModule {}
