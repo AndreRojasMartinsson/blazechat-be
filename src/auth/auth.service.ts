@@ -37,6 +37,12 @@ export class AuthService {
     );
   }
 
+  createEmailToken(): string {
+    const token = randomBytes(42).toString('hex');
+
+    return token;
+  }
+
   async createRefreshToken(user: User): Promise<string> {
     const token = randomBytes(128).toString('hex');
 
@@ -205,7 +211,8 @@ export class AuthService {
 
     const hashedPassword = await this.hash(dto.password);
 
-    const user = await this.usersService.createUser(dto.email, dto.username, hashedPassword)
+    const emailToken = this.createEmailToken()
+    const user = await this.usersService.createUser(dto, hashedPassword, emailToken)
 
     await this.eventEmitter.emitAsync("auth.emails.send_confirmation", user)
 
