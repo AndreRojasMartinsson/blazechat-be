@@ -6,7 +6,7 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import fastifyCookie from '@fastify/cookie';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -28,6 +28,12 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
+  app.setGlobalPrefix('api');
+  app.enableVersioning({
+    prefix: 'v',
+    type: VersioningType.URI,
+    defaultVersion: '1',
+  });
   app.enableCors({
     credentials: true,
     origin: configService.getOrThrow<string>('secrets.site_url'),
@@ -42,7 +48,7 @@ async function bootstrap() {
     .build();
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, documentFactory);
+  SwaggerModule.setup('api/docs', app, documentFactory);
 
   await app.register(fastifyCookie, {
     parseOptions: { httpOnly: true, sameSite: 'lax', secure: false, path: '/' },
