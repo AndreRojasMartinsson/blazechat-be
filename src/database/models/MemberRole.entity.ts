@@ -13,7 +13,9 @@ export class MemberRole {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => ServerMember, (member) => member.roles)
+  @ManyToOne(() => ServerMember, (member) => member.roles, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn()
   member: ServerMember;
 
