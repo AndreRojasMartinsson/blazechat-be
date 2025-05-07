@@ -20,11 +20,14 @@ import { AllowSuspended } from './suspension.guard';
 import { JwtUserPayload } from 'src/auth/schemas';
 import { InjectMinio } from 'nestjs-minio';
 import { Client } from 'minio';
+import { ServersService } from 'src/servers/servers.service';
+import { ServerMember } from 'src/database/models/ServerMember.entity';
 
 @Controller('users')
 export class UsersController {
   constructor(
     private usersService: UsersService,
+    private serverService: ServersService,
     @InjectMinio() private readonly minioClient: Client,
   ) {}
 
@@ -33,6 +36,11 @@ export class UsersController {
     const user = await this.usersService.findOne(payload.sub);
 
     return user;
+  }
+
+  @Get('/:id')
+  async getUser(@Param('id') userId: string): Promise<User | null> {
+    return this.usersService.findOne(userId);
   }
 
   @Delete('/me')
@@ -56,6 +64,22 @@ export class UsersController {
     );
 
     return new StreamableFile(obj);
+  }
+
+  @Delete('/me/servers/:server_id')
+  async leaveServer(
+    @AccessToken() payload: JwtUserPayload,
+    @Param('server_id') serverId: string,
+  ) {
+    return this.serverService.deleteUserFromServer(serverId, payload.sub);
+  }
+
+  @Get('/me/servers/:server_id/member')
+  async getCurrentUserGuildMember(
+    @AccessToken() payload: JwtUserPayload,
+    @Param('server_id') serverId: string,
+  ): Promise<ServerMember> {
+    return this.serverService.getMemberFromUserId(serverId, payload.sub);
   }
 
   @Delete('/:id')

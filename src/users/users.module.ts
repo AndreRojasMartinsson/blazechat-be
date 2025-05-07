@@ -8,9 +8,11 @@ import { Suspension } from 'src/database/models/Suspension.entity';
 import { Server } from 'src/database/models/Server.entity';
 import { NestMinioModule } from 'nestjs-minio';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ServersModule } from 'src/servers/servers.module';
 
 @Module({
   imports: [
+    ServersModule,
     TypeOrmModule.forFeature([User, PendingDeletion, Suspension, Server]),
     NestMinioModule.registerAsync({
       imports: [ConfigModule],
