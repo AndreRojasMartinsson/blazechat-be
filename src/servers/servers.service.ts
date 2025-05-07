@@ -266,8 +266,11 @@ export class ServersService {
    * @throws
    * @param memberId - Id of member to delete
    */
-  async deleteMember(memberId: string) {
-    await this.memberRepository.delete({ id: memberId });
+  async deleteUserFromServer(serverId: string, userId: string) {
+    await this.memberRepository.delete({
+      server: { id: serverId },
+      user: { id: userId },
+    });
   }
 
   /**
