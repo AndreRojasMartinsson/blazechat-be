@@ -53,6 +53,58 @@ export class UsersController {
     return this.usersService.getServers(payload.sub);
   }
 
+  @Get('/me/friends/requests/incoming')
+  async getIncomingRequests(@AccessToken() payload: JwtUserPayload) {
+    return this.usersService.getIncomingFriendRequests(payload.sub);
+  }
+
+  @Get('/me/friends/requests/outgoing')
+  async getOutgoingRequests(@AccessToken() payload: JwtUserPayload) {
+    return this.usersService.getOutgoingFriendRequests(payload.sub);
+  }
+
+  @Post('/:id/friendship/request')
+  async requestFriendship(
+    @AccessToken() payload: JwtUserPayload,
+    @Param('id') recipientId: string,
+  ) {
+    return this.usersService.createFriendRequest(payload.sub, recipientId);
+  }
+
+  @Post('/:id/friendship/decline')
+  async declineFriendRequest(
+    @AccessToken() payload: JwtUserPayload,
+    @Param('id') otherUserId: string,
+  ) {
+    return this.usersService.declineFriendRequest(payload.sub, otherUserId);
+  }
+
+  @Post('/:id/friendship/accept')
+  async acceptFriendRequest(
+    @AccessToken() payload: JwtUserPayload,
+    @Param('id') otherUserId: string,
+  ) {
+    return this.usersService.acceptFriendRequest(payload.sub, otherUserId);
+  }
+
+  @Post('/:id/block')
+  async blockUser(
+    @AccessToken() payload: JwtUserPayload,
+    @Param('id') recipientId: string,
+  ) {
+    return this.usersService.blockUser(payload.sub, recipientId);
+  }
+
+  @Get('/me/blocked')
+  async getBlockedUsers(@AccessToken() payload: JwtUserPayload) {
+    return this.usersService.getBlockedUsers(payload.sub);
+  }
+
+  @Get('/me/friends')
+  async getFriends(@AccessToken() payload: JwtUserPayload) {
+    return this.usersService.getFriends(payload.sub);
+  }
+
   @Get('/me/avatar')
   @HttpCode(HttpStatus.OK)
   @Header('Content-Type', 'image/jpeg')
