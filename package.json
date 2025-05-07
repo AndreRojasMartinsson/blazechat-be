@@ -72,9 +72,11 @@
     "@nestjs/testing": "^11.0.1",
     "@sentry/cli": "^2.44.0",
     "@sentry/webpack-plugin": "^3.4.0",
+    "@suites/di.nestjs": "^3.0.1",
+    "@suites/doubles.jest": "^3.0.1",
+    "@suites/unit": "^3.0.1",
     "@swc/cli": "^0.7.3",
     "@swc/core": "^1.11.24",
-    "@swc/jest": "^0.2.38",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
     "@types/minio": "^7.1.1",
@@ -112,20 +114,25 @@
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": [
-        "@swc/jest"
+        "ts-jest"
       ]
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^src/(.*)$": "<rootDir>/$1"
+    }
   },
   "trustedDependencies": [
     "@nestjs/core",
     "@scarf/scarf",
     "@sentry-internal/node-cpu-profiler",
     "@sentry/cli",
+    "@suites/di.nestjs",
+    "@suites/doubles.jest",
     "@swc/core",
     "esbuild",
     "msgpackr-extract",
