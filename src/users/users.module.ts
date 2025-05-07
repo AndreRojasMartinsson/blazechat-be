@@ -9,11 +9,18 @@ import { Server } from 'src/database/models/Server.entity';
 import { NestMinioModule } from 'nestjs-minio';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ServersModule } from 'src/servers/servers.module';
+import { Friendship } from 'src/database/models/Friendship.entity';
 
 @Module({
   imports: [
     ServersModule,
-    TypeOrmModule.forFeature([User, PendingDeletion, Suspension, Server]),
+    TypeOrmModule.forFeature([
+      User,
+      PendingDeletion,
+      Suspension,
+      Server,
+      Friendship,
+    ]),
     NestMinioModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

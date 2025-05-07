@@ -10,18 +10,18 @@ export enum FriendshipStatus {
 @Entity()
 export class Friendship {
   @PrimaryColumn('uuid')
-  user_id_1: string;
+  requester_id: string;
 
   @PrimaryColumn('uuid')
-  user_id_2: string;
+  recipient_id: string;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'user_id_1' })
-  user1: User;
+  @JoinColumn({ name: 'requester_id' })
+  requester: User;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'user_id_2' })
-  user2: User;
+  @JoinColumn({ name: 'recipient_id' })
+  recipient: User;
 
   @Column({
     type: 'enum',
@@ -29,4 +29,8 @@ export class Friendship {
     default: FriendshipStatus.PENDING,
   })
   status: FriendshipStatus;
+
+  constructor(partial: Partial<Friendship>) {
+    Object.assign(this, partial);
+  }
 }
