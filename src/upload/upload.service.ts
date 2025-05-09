@@ -1,16 +1,14 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { rm } from 'node:fs/promises';
-import { Client } from 'minio';
-import { MINIO_CONNECTION } from 'nestjs-minio';
+import { Injectable } from '@nestjs/common';
 import * as sharp from 'sharp';
 import { File } from '@nest-lab/fastify-multer';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class UploadService {
-  constructor(@Inject(MINIO_CONNECTION) private readonly minioClient: Client) {}
+  constructor(private readonly supabaseClient: SupabaseClient) {}
 
   async uploadAvatar(userId: string, file: File) {
-    await sharp(file.buffer)
+    const optimizedFile = await sharp(file.buffer)
       .resize({
         height: 256,
         width: 256,
@@ -19,21 +17,13 @@ export class UploadService {
         fit: 'fill',
       })
       .toFormat('jpeg', { compressionLevel: 10 })
-      .toFile(`/tmp/avatar_${userId}.jpeg`);
+      .toBuffer();
 
-    const metaData = {
-      'Content-Type': 'image/jpeg',
-    };
-
-    // Upload avatar to MINIO S3
-    await this.minioClient.fPutObject(
-      'blazechat-avatars',
-      `avatar_${userId}.jpeg`,
-      `/tmp/avatar_${userId}.jpeg`,
-      metaData,
-    );
-
-    // Remove temporary avatar image
-    await rm(`/tmp/avatar_${userId}.jpeg`);
+    await this.supabaseClient.storage
+      .from('avatars')
+      .upload(`avatar_${userId}.jpeg`, optimizedFile, {
+        contentType: 'image/jpeg',
+        upsert: true,
+      });
   }
 }
