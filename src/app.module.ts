@@ -28,7 +28,9 @@ import { join } from 'path';
 import emailConfig from './config/email.config';
 import { BullModule } from '@nestjs/bullmq';
 import { UploadModule } from './upload/upload.module';
-import minioConfig from './config/minio.config';
+import supabaseConfig from './config/supabase.config';
+import { SupabaseModule } from 'nestjs-supabase-js';
+import bullmqConfig from './config/bullmq.config';
 
 @Module({
   imports: [
@@ -43,17 +45,49 @@ import minioConfig from './config/minio.config';
         fallthrough: false,
       },
     }),
-    BullModule.forRoot({
-      connection: {
-        host: 'localhost',
-        port: 6379,
+    BullModule.forRootAsync({
+      inject: [ConfigService],
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => {
+        const env = configService.getOrThrow<string>('bullmq.env');
+
+        return env === 'development'
+          ? {
+              connection: {
+                host: configService.getOrThrow<string>('bullmq.host'),
+                port: +configService.getOrThrow<number>('bullmq.port'),
+              },
+            }
+          : {
+              connection: {
+                host: configService.getOrThrow<string>('bullmq.host'),
+                port: +configService.getOrThrow<number>('bullmq.port'),
+                username: configService.getOrThrow<string>('bullmq.user'),
+                password: configService.getOrThrow<string>('bullmq.pass'),
+              },
+            };
       },
     }),
     EventEmitterModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,
-      load: [databaseConfig, secretsConfig, emailConfig, minioConfig],
+      envFilePath: ['.env.production', '.env'],
+      load: [
+        databaseConfig,
+        secretsConfig,
+        emailConfig,
+        supabaseConfig,
+        bullmqConfig,
+      ],
+    }),
+    SupabaseModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        supabaseUrl: configService.getOrThrow<string>('supabase.url'),
+        supabaseKey: configService.getOrThrow<string>('supabase.key'),
+      }),
     }),
     databaseProvider,
     SentryModule.forRoot(),
