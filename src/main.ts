@@ -75,8 +75,8 @@ async function bootstrap() {
   );
 
   await app.listen(
-    process.env.PORT ?? 3000,
-    process.env.API_BIND_IP ?? '127.0.0.1',
+    process.env.PORT ?? 3080,
+    // process.env.API_BIND_IP ?? '127.0.0.1',
   );
 
   if (module.hot) {
