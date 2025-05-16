@@ -1,0 +1,7 @@
+---
+global:
+  scrape_interval: 15s
+scrape_configs:
+  - job_name: nestjs-server
+    static_configs:
+      - targets: [217.154.204.228:80]  # Replace with your NestJS server IP and port
