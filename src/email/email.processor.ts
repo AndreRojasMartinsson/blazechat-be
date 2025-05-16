@@ -20,7 +20,7 @@ export class EmailProcessor extends WorkerHost {
   ) {
     super();
 
-    this.siteUrl = this.configService.getOrThrow<string>('secrets.site_url');
+    this.siteUrl = this.configService.getOrThrow<string>('secrets.api_url');
   }
 
   private async sendEmail(to: string, subject: string, src: string) {
@@ -48,7 +48,7 @@ export class EmailProcessor extends WorkerHost {
     name: string,
     params: Record<string, string>,
   ): Promise<string> {
-    const siteUrl = this.configService.getOrThrow<string>('secrets.site_url');
+    const siteUrl = this.configService.getOrThrow<string>('secrets.api_url');
 
     const path = `${siteUrl}/templates/${name}.html`;
     const response = await firstValueFrom(

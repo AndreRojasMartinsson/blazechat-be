@@ -1,4 +1,12 @@
-import { IsEmail, IsNotEmpty, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import * as z from 'zod';
 
 export class SignInDTO {
@@ -15,11 +23,13 @@ export class SignInDTO {
 }
 
 export class SignUpDTO {
+  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   @IsEmail()
   email: string;
 
+  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   @Matches(/^(?!.*_.*_)(?!_)(?!.*_$)[A-Za-z0-9_]+$/g)
@@ -27,6 +37,7 @@ export class SignUpDTO {
   @MaxLength(20)
   username: string;
 
+  @ApiProperty()
   @IsNotEmpty()
   @MaxLength(512)
   @IsString()

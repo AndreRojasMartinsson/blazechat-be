@@ -28,7 +28,8 @@ import { join } from 'path';
 import emailConfig from './config/email.config';
 import { BullModule } from '@nestjs/bullmq';
 import { UploadModule } from './upload/upload.module';
-import minioConfig from './config/minio.config';
+import redisConfig from './config/redis.config';
+import redisQueueConfig from './config/redis-queue.config';
 
 @Module({
   imports: [
@@ -43,17 +44,30 @@ import minioConfig from './config/minio.config';
         fallthrough: false,
       },
     }),
-    BullModule.forRoot({
-      connection: {
-        host: 'localhost',
-        port: 6379,
-      },
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        connection: {
+          host: configService.getOrThrow<string>('redis_queue.host'),
+          port: +configService.getOrThrow<number>('redis_queue.port'),
+          username: configService.getOrThrow<string>('redis_queue.user'),
+          password: configService.getOrThrow<string>('redis_queue.password'),
+        },
+      }),
     }),
     EventEmitterModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,
-      load: [databaseConfig, secretsConfig, emailConfig, minioConfig],
+      envFilePath: ['.env.production', '.env'],
+      load: [
+        databaseConfig,
+        secretsConfig,
+        emailConfig,
+        redisConfig,
+        redisQueueConfig,
+      ],
     }),
     databaseProvider,
     SentryModule.forRoot(),
@@ -64,9 +78,7 @@ import minioConfig from './config/minio.config';
       isGlobal: true,
       useFactory: (configService: ConfigService) => {
         return {
-          stores: [
-            createKeyv(configService.getOrThrow<string>('database.redis')),
-          ],
+          stores: [createKeyv(configService.getOrThrow<string>('redis.uri'))],
         };
       },
     }),

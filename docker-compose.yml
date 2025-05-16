@@ -1,0 +1,47 @@
+---
+services:
+  bc-postgres:
+    image: postgres:17.5
+    container_name: blazechat-postgres
+    env_file: [.env]
+    ports: [5432:5432]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    networks: [backend]
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -h $${POSTGRES_HOST} -U $${POSTGRES_USER} -d $${POSTGRES_DB}
+          || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+  bc-redis-cache:
+    image: redis:8.0.1
+    container_name: blazechat-redis-cache
+    ports: [6379:6379]
+    command: [redis-server, /usr/local/etc/redis/redis.conf]
+    networks: [backend]
+    volumes: [./docker/redis-cache.conf:/usr/local/etc/redis/redis.conf]
+    healthcheck:
+      test: [CMD, redis-cli, -p, '6379', ping]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+  bc-redis-queue:
+    image: redis:8.0.1
+    container_name: blazechat-redis-queue
+    ports: [6380:6379]
+    command: [redis-server, /usr/local/etc/redis/redis.conf]
+    volumes: [./docker/redis-queue.conf:/usr/local/etc/redis/redis.conf]
+    healthcheck:
+      test: [CMD, redis-cli, -p, '6379', ping]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+volumes:
+  pgdata:
+networks:
+  backend:

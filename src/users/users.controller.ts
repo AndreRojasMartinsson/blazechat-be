@@ -8,7 +8,6 @@ import {
   HttpStatus,
   Param,
   Post,
-  StreamableFile,
   UnauthorizedException,
 } from '@nestjs/common';
 import { User, UserRole } from 'src/database/models/User.entity';
@@ -18,8 +17,6 @@ import { Roles } from './roles.guard';
 import { SuspendUserDTO } from './schema';
 import { AllowSuspended } from './suspension.guard';
 import { JwtUserPayload } from 'src/auth/schemas';
-import { InjectMinio } from 'nestjs-minio';
-import { Client } from 'minio';
 import { ServersService } from 'src/servers/servers.service';
 import { ServerMember } from 'src/database/models/ServerMember.entity';
 
@@ -28,7 +25,8 @@ export class UsersController {
   constructor(
     private usersService: UsersService,
     private serverService: ServersService,
-    @InjectMinio() private readonly minioClient: Client,
+    // TODO: Add supabase import so we can use their storage
+    // @InjectMinio() private readonly minioClient: Client,
   ) {}
 
   @Get('/me')
@@ -57,13 +55,12 @@ export class UsersController {
   @HttpCode(HttpStatus.OK)
   @Header('Content-Type', 'image/jpeg')
   async getAvatar(@AccessToken() payload: JwtUserPayload) {
-    const userId = payload.sub;
-    const obj = await this.minioClient.getObject(
-      'blazechat-avatars',
-      `avatar_${userId}.jpeg`,
-    );
-
-    return new StreamableFile(obj);
+    // const userId = payload.sub;
+    // const obj = await this.minioClient.getObject(
+    //   'blazechat-avatars',
+    //   `avatar_${userId}.jpeg`,
+    // );
+    // return new StreamableFile(obj);
   }
 
   @Delete('/me/servers/:server_id')

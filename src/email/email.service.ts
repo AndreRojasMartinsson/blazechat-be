@@ -19,9 +19,9 @@ export class EmailService {
     name: string,
     params: Record<string, string>,
   ): Promise<string> {
-    const siteUrl = this.configService.getOrThrow<string>('secrets.site_url');
+    const apiUrl = this.configService.getOrThrow<string>('secrets.api_url');
 
-    const path = `${siteUrl}/templates/${name}.html`;
+    const path = `${apiUrl}/templates/${name}.html`;
     const response = await firstValueFrom(
       this.httpService.get<string>(path).pipe(
         catchError((error: AxiosError) => {

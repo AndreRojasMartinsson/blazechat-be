@@ -79,8 +79,10 @@ async function bootstrap() {
 
   if (module.hot) {
     module.hot.accept();
-    module.hot.dispose(() => app.close());
+    module.hot.dispose(() => {
+      app.close().catch(console.error);
+    });
   }
 }
 
-void bootstrap();
+bootstrap().catch(console.error);

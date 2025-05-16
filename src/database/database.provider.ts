@@ -38,10 +38,15 @@ export default TypeOrmModule.forRootAsync({
       User,
     ],
     // autoLoadEntities: true,
-    ssl: {
-      ca: readFileSync('prod-ca-2021.crt').toString(),
-    },
+
     synchronize: true,
+    // ssl:
+    //   configService.get<string>('secrets.env') !== 'production'
+    //     ? false
+    //     : {
+    //         ca: readFileSync('prod-ca-2021.crt').toString(),
+    //       },
+    // synchronize: configService.get<string>('secrets.env') !== 'production',
   }),
   inject: [ConfigService],
 });
