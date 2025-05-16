@@ -28,7 +28,6 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
-  app.setGlobalPrefix('api');
   app.enableVersioning({
     prefix: 'v',
     type: VersioningType.URI,
