@@ -35,7 +35,7 @@ export class EmailProcessor extends WorkerHost {
     });
 
     await transporter.sendMail({
-      from: '"BlazeChat - No Reply" <noreply@activework.se>',
+      from: '"BlazeChat - No Reply" <noreply@blazechat.se>',
       to,
       subject,
       html: src,
@@ -69,7 +69,7 @@ export class EmailProcessor extends WorkerHost {
   }
 
   private async sendConfirmEmail(payload: { user: User; redirect: string }) {
-    const verificationUrl = `${this.siteUrl}/auth/verify?t=${encodeURIComponent(payload.user.email_verification_token!)}&redirect=${payload.redirect}`;
+    const verificationUrl = `${this.siteUrl}/v1/auth/verify?t=${encodeURIComponent(payload.user.email_verification_token!)}&redirect=${payload.redirect}`;
 
     const src = await this.parseTemplate('confirm-email', {
       URL: verificationUrl,
