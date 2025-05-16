@@ -28,6 +28,7 @@ import { join } from 'path';
 import emailConfig from './config/email.config';
 import { BullModule } from '@nestjs/bullmq';
 import { UploadModule } from './upload/upload.module';
+import { MetricsModule } from './metrics/metrics.module';
 import redisConfig from './config/redis.config';
 import redisQueueConfig from './config/redis-queue.config';
 
@@ -90,6 +91,7 @@ import redisQueueConfig from './config/redis-queue.config';
     LoggerModule,
     EmailModule,
     UploadModule,
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [
