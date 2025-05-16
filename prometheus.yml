@@ -4,5 +4,6 @@ global:
 scrape_configs:
   - job_name: nestjs-server
     metrics_path: /v1/metrics
+    scheme: https
     static_configs:
-      - targets: [217.154.204.228:3080]  # Replace with your NestJS server IP and port
+      - targets: [api.blazechat.se]  # Replace with your NestJS server IP and port
