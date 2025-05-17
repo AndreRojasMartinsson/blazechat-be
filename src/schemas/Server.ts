@@ -10,6 +10,22 @@ import {
 } from 'class-validator';
 import { Permission } from 'src/database/models/ServerRole.entity';
 
+export class ServerInDto {
+  @ApiProperty()
+  @MinLength(1)
+  @MaxLength(50)
+  @IsNotEmpty()
+  name: string;
+}
+
+export class ServerUpdateDto {
+  @ApiProperty()
+  @MinLength(1)
+  @MaxLength(50)
+  @IsNotEmpty()
+  name: string;
+}
+
 export class ServerRoleDTO {
   @ApiProperty()
   @IsString()
@@ -26,13 +42,4 @@ export class ServerRoleDTO {
   @IsNumber()
   @IsNotEmpty()
   permissions: Permission;
-}
-
-export class ServerInDTO {
-  @ApiProperty()
-  @IsString()
-  @MinLength(1)
-  @MaxLength(50)
-  @IsNotEmpty()
-  name: string;
 }
