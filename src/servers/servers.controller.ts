@@ -83,7 +83,14 @@ export class ServersController {
     return this.serverService.getServerRoleById(serverId, roleId);
   }
 
-  async searchRole() {}
+  @Get('/:server_id/roles/search/:role_name')
+  @HttpCode(HttpStatusCode.Ok)
+  async searchRole(
+    @Param('server_id') serverId: string,
+    @Param('role_name') roleName: string,
+  ) {
+    return this.serverService.searchRolesByName(serverId, roleName);
+  }
 
   // @Get('/:server_id/roles')
   // @HttpCode(HttpStatusCode.Ok)
