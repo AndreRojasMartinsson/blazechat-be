@@ -2,11 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Server } from 'src/database/models/Server.entity';
 import { Permission, ServerRole } from 'src/database/models/ServerRole.entity';
-import { And, Brackets, Repository } from 'typeorm';
-import { ServerInDTO, ServerRoleDTO } from './schemas';
+import { Brackets, Repository } from 'typeorm';
 import { User } from 'src/database/models/User.entity';
 import { ServerMember } from 'src/database/models/ServerMember.entity';
 import { MemberRole } from 'src/database/models/MemberRole.entity';
+import { ServerInDto, ServerUpdateDto } from 'src/schemas/Server';
 
 @Injectable()
 export class ServersService {
@@ -28,13 +28,32 @@ export class ServersService {
    * @param dto
    * @returns created server row
    */
-  async createServer(owner: User, dto: ServerInDTO): Promise<Server> {
+  async createServer(owner: User, dto: ServerInDto): Promise<Server> {
     const row = new Server({
       name: dto.name,
       owner,
     });
 
     return this.server.save(row);
+  }
+
+  /**
+   * Deletes a server with the specified id.
+   *
+   * @param serverId
+   */
+  async deleteServer(serverId: string) {
+    await this.server.delete({ id: serverId });
+  }
+
+  /**
+   * Updates the server with the specified name
+   *
+   * @param serverId
+   * @param dto
+   */
+  async updateServer(serverId: string, dto: ServerUpdateDto) {
+    await this.server.update({ id: serverId }, { name: dto.name });
   }
 
   /**

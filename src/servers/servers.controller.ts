@@ -1,23 +1,28 @@
 import {
   Body,
   Controller,
+  Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
   NotFoundException,
   Param,
   Post,
+  Put,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ServersService } from './servers.service';
 import { HttpStatusCode } from 'axios';
 import { AccessToken } from 'src/utils/request';
 import { JwtUserPayload } from 'src/auth/schemas';
 import { ServerMember } from 'src/database/models/ServerMember.entity';
-import { ServerInDTO } from './schemas';
 import { LoggerService } from 'src/logger/logger.service';
 import { UsersService } from 'src/users/users.service';
 import { Server } from 'src/database/models/Server.entity';
-import { ServerRole } from 'src/database/models/ServerRole.entity';
+import { Permission, ServerRole } from 'src/database/models/ServerRole.entity';
+import { ServerInDto, ServerUpdateDto } from 'src/schemas/Server';
+import { Perms } from './permission.guard';
 
 @Controller('servers')
 export class ServersController {
@@ -41,14 +46,50 @@ export class ServersController {
   @HttpCode(HttpStatusCode.Created)
   async createServer(
     @AccessToken() payload: JwtUserPayload,
-    @Body() dto: ServerInDTO,
+    @Body() body: ServerInDto,
   ) {
-    this.log(`Create server '${dto.name}' (uid = ${payload.sub})`);
+    this.log(`Create server '${body.name}' (uid = ${payload.sub})`);
 
     const owner = await this.userService.findOne(payload.sub);
     if (!owner) throw new NotFoundException('Owner not found');
 
-    return this.serverService.createServer(owner, dto);
+    return this.serverService.createServer(owner, body);
+  }
+
+  @Put('/:id')
+  @HttpCode(HttpStatusCode.NoContent)
+  @Perms(Permission.MANAGE_SERVER)
+  async updateServer(
+    @AccessToken() payload: JwtUserPayload,
+    @Param('id') serverId: string,
+    @Body() body: ServerUpdateDto,
+  ) {
+    this.log(
+      `Update server '${serverId}' with new name = '${body.name}' (uid = ${payload.sub})`,
+    );
+
+    return this.serverService.updateServer(serverId, body);
+  }
+
+  @Delete('/:id')
+  @HttpCode(HttpStatusCode.NoContent)
+  @Perms(Permission.MANAGE_SERVER)
+  async deleteServer(
+    @AccessToken() payload: JwtUserPayload,
+    @Param('id') serverId: string,
+  ) {
+    const member = await this.serverService.getMemberFromUserId(
+      serverId,
+      payload.sub,
+    );
+
+    if (member.server.owner.id !== payload.sub) {
+      throw new ForbiddenException();
+    }
+
+    this.log(`Delete server '${serverId}' (uid = ${payload.sub})`);
+
+    return this.serverService.deleteServer(serverId);
   }
 
   @Get('/:server_id/members')
