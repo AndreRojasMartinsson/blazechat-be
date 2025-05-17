@@ -68,6 +68,15 @@ export class ServersController {
     return this.serverService.getMember(serverId, memberId);
   }
 
+  @Get('/:server_id/members/search/:member_name')
+  @HttpCode(HttpStatusCode.Ok)
+  async searchMember(
+    @Param('server_id') serverId: string,
+    @Param('member_name') memberName: string,
+  ) {
+    return this.serverService.searchMembersByName(serverId, memberName);
+  }
+
   @Get('/:server_id/roles')
   @HttpCode(HttpStatusCode.Ok)
   async getRoles(@Param('server_id') serverId: string): Promise<ServerRole[]> {

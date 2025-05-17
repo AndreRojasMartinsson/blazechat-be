@@ -93,6 +93,42 @@ export class ServersService {
   }
 
   /**
+   * Searchs members in a server by their name
+   *
+   * @param serverId
+   * @param roleName
+   * @returns members matching name
+   */
+  async searchMembersByName(serverId: string, memberName: string) {
+    return this.memberRepository
+      .createQueryBuilder('member')
+      .innerJoin('member.server', 'server')
+      .where('server.id = :serverId', { serverId })
+      .andWhere(
+        new Brackets((qb) => {
+          qb.where('role.normalized_name = :normalized')
+            .orWhere('role.normalized_name ILIKE :ilike')
+            .orWhere('similarity(role.normalized_name, :normalized) > 0.3');
+        }),
+      )
+      .orderBy(
+        `
+        CASE
+          WHEN role.normalized_name = :normalized THEN 1
+          WHEN role.normalized_name ILIKE :ilike THEN 2
+          ELSE 3
+        END
+        `,
+        'ASC',
+      )
+      .setParameters({
+        normalized: memberName.toLowerCase(),
+        ilike: `%${memberName.toLowerCase()}%`,
+      })
+      .getMany();
+  }
+
+  /**
    * Gets a server by it's id and returns it
    *
    * @param serverId
