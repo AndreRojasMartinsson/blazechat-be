@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Server } from 'src/database/models/Server.entity';
 import { Permission, ServerRole } from 'src/database/models/ServerRole.entity';
-import { Repository } from 'typeorm';
+import { And, Brackets, Repository } from 'typeorm';
 import { ServerInDTO, ServerRoleDTO } from './schemas';
 import { User } from 'src/database/models/User.entity';
 import { ServerMember } from 'src/database/models/ServerMember.entity';
@@ -35,6 +35,61 @@ export class ServersService {
     });
 
     return this.server.save(row);
+  }
+
+  /**
+   * Gets a role in a server by its id
+   *
+   * @param serverId
+   * @param roleId
+   * @returns role with given `roleId`
+   */
+  async getServerRoleById(
+    serverId: string,
+    roleId: string,
+  ): Promise<ServerRole> {
+    return this.serverRole
+      .findOneBy({ server: { id: serverId }, id: roleId })
+      .then((role) => {
+        if (role === null) throw new NotFoundException('Role not found');
+        return role;
+      });
+  }
+
+  /**
+   * Searchs roles in a server by its name
+   *
+   * @param serverId
+   * @param roleName
+   * @returns roles matching name
+   */
+  async searchRolesByName(serverId: string, roleName: string) {
+    return this.serverRole
+      .createQueryBuilder('role')
+      .innerJoin('role.server', 'server')
+      .where('server.id = :serverId', { serverId })
+      .andWhere(
+        new Brackets((qb) => {
+          qb.where('role.normalized_name = :normalized')
+            .orWhere('role.normalized_name ILIKE :ilike')
+            .orWhere('similarity(role.normalized_name, :normalized) > 0.3');
+        }),
+      )
+      .orderBy(
+        `
+        CASE
+          WHEN role.normalized_name = :normalized THEN 1
+          WHEN role.normalized_name ILIKE :ilike THEN 2
+          ELSE 3
+        END
+        `,
+        'ASC',
+      )
+      .setParameters({
+        normalized: roleName.toLowerCase(),
+        ilike: `%${roleName.toLowerCase()}%`,
+      })
+      .getMany();
   }
 
   /**

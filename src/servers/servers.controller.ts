@@ -74,6 +74,17 @@ export class ServersController {
     return this.serverService.getServerRoles(serverId);
   }
 
+  @Get('/:server_id/roles/:role_id')
+  @HttpCode(HttpStatusCode.Ok)
+  async getRole(
+    @Param('server_id') serverId: string,
+    @Param('role_id') roleId: string,
+  ) {
+    return this.serverService.getServerRoleById(serverId, roleId);
+  }
+
+  async searchRole() {}
+
   // @Get('/:server_id/roles')
   // @HttpCode(HttpStatusCode.Ok)
   // async getRoles(@Param('server_id') serverId: string): Promise<ServerRole[]> {
