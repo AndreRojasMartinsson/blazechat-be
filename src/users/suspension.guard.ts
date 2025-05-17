@@ -29,9 +29,17 @@ export class SuspensionGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
 
-    const {
-      user: { sub: userId },
-    } = JwtPayloadRequest.parse(request);
+    let userId: string;
+
+    try {
+      const {
+        user: { sub },
+      } = JwtPayloadRequest.parse(request);
+
+      userId = sub;
+    } catch {
+      throw new UnauthorizedException();
+    }
 
     const user = await this.usersService.findOne(userId);
 
