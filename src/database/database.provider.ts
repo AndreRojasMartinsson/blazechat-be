@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuditLog } from './models/AuditLog.entity';
@@ -39,7 +38,10 @@ export default TypeOrmModule.forRootAsync({
     ],
     // autoLoadEntities: true,
 
-    synchronize: true,
+    synchronize: false,
+    migrations: [__dirname + '/../migrations/*.{ts,js}'],
+    migrationsRun: true,
+
     // ssl:
     //   configService.get<string>('secrets.env') !== 'production'
     //     ? false

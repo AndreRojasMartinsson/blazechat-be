@@ -1,7 +1,10 @@
 import {
+  BeforeInsert,
+  BeforeUpdate,
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -58,6 +61,17 @@ export class ServerRole {
 
   @OneToMany(() => MemberRole, (member_role) => member_role.role)
   members: MemberRole[];
+
+  // Lowercased and preprocessed name for better indexing
+  @Index()
+  @Column({ type: 'text' })
+  normalized_name: string;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  normalizedName() {
+    this.normalized_name = this.name.toLowerCase();
+  }
 
   constructor(partial: Partial<ServerRole>) {
     Object.assign(this, partial);

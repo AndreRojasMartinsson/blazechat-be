@@ -1,7 +1,10 @@
 import {
+  BeforeInsert,
+  BeforeUpdate,
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -26,8 +29,9 @@ export class ServerMember {
   @JoinColumn()
   server: Server;
 
-  @Column({ nullable: true })
-  nickname?: string;
+  @Index()
+  @Column({ type: 'text' })
+  nickname: string;
 
   @CreateDateColumn()
   created_at: Date;
@@ -46,6 +50,17 @@ export class ServerMember {
 
   @OneToMany(() => ThreadMessage, (message) => message.author)
   messages: ThreadMessage[];
+
+  // Lowercased and preprocessed name for better indexing
+  @Index()
+  @Column({ type: 'text' })
+  normalized_name: string;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  normalizedName() {
+    this.normalized_name = this.nickname.toLowerCase();
+  }
 
   constructor(partial: Partial<ServerMember>) {
     Object.assign(this, partial);

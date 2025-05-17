@@ -19,7 +19,10 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org activework-yg --project blazechat ./dist && sentry-cli sourcemaps upload --org activework-yg --project blazechat ./dist"
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org activework-yg --project blazechat ./dist && sentry-cli sourcemaps upload --org activework-yg --project blazechat ./dist",
+    "migration:generate": "bunx typeorm-ts-node-commonjs migration:generate -d ./data-source.ts",
+    "migration:create": "bunx typeorm-ts-node-commonjs migration:create",
+    "migration:run": "bunx typeorm-ts-node-commonjs migration:run -d ./data-source.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
