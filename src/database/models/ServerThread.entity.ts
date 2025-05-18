@@ -6,6 +6,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  Relation,
 } from 'typeorm';
 import { Server } from './Server.entity';
 import { ThreadMessage } from './ThreadMessage.entity';
@@ -17,7 +18,7 @@ export class ServerThread {
 
   @ManyToOne(() => Server, (server) => server.threads)
   @JoinColumn()
-  server: Server;
+  server: Relation<Server>;
 
   @Column()
   name: string;

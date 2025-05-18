@@ -9,6 +9,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  Relation,
 } from 'typeorm';
 import { User } from './User.entity';
 import { Server } from './Server.entity';
@@ -23,11 +24,11 @@ export class ServerMember {
 
   @ManyToOne(() => User, (user) => user.server_members)
   @JoinColumn()
-  user: User;
+  user: Relation<User>;
 
   @ManyToOne(() => Server, (server) => server.members)
   @JoinColumn()
-  server: Server;
+  server: Relation<Server>;
 
   @Index()
   @Column({ type: 'text' })

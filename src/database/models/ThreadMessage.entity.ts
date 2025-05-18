@@ -5,6 +5,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Relation,
   UpdateDateColumn,
 } from 'typeorm';
 import { ServerThread } from './ServerThread.entity';
@@ -17,11 +18,11 @@ export class ThreadMessage {
 
   @ManyToOne(() => ServerThread, (thread) => thread.messages)
   @JoinColumn()
-  thread: ServerThread;
+  thread: Relation<ServerThread>;
 
   @ManyToOne(() => ServerMember, (member) => member.messages)
   @JoinColumn()
-  author: ServerMember;
+  author: Relation<ServerMember>;
 
   @Column('text')
   message: string;

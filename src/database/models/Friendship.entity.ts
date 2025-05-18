@@ -1,4 +1,11 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryColumn,
+  Relation,
+} from 'typeorm';
 import { User } from './User.entity';
 
 export enum FriendshipStatus {
@@ -17,11 +24,11 @@ export class Friendship {
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id_1' })
-  user1: User;
+  user1: Relation<User>;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id_2' })
-  user2: User;
+  user2: Relation<User>;
 
   @Column({
     type: 'enum',

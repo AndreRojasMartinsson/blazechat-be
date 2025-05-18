@@ -9,6 +9,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  Relation,
 } from 'typeorm';
 import { Server } from './Server.entity';
 import { MemberRole } from './MemberRole.entity';
@@ -42,7 +43,7 @@ export class ServerRole {
 
   @ManyToOne(() => Server, (server) => server.roles)
   @JoinColumn()
-  server: Server;
+  server: Relation<Server>;
 
   @Column()
   name: string;

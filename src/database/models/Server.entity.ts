@@ -6,6 +6,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  Relation,
 } from 'typeorm';
 import { User } from './User.entity';
 import { ServerMember } from './ServerMember.entity';
@@ -19,7 +20,7 @@ export class Server {
 
   @ManyToOne(() => User, (user) => user.ownedServers)
   @JoinColumn()
-  owner: User;
+  owner: Relation<User>;
 
   @Column()
   name: string;

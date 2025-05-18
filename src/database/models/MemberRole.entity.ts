@@ -4,6 +4,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Relation,
 } from 'typeorm';
 import { ServerMember } from './ServerMember.entity';
 import { ServerRole } from './ServerRole.entity';
@@ -17,11 +18,11 @@ export class MemberRole {
     onDelete: 'CASCADE',
   })
   @JoinColumn()
-  member: ServerMember;
+  member: Relation<ServerMember>;
 
   @ManyToOne(() => ServerRole, (role) => role.members)
   @JoinColumn()
-  role: ServerRole;
+  role: Relation<ServerRole>;
 
   @CreateDateColumn()
   created_at: Date;

@@ -4,6 +4,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Relation,
 } from 'typeorm';
 import { ServerMember } from './ServerMember.entity';
 import { AuditLogAction } from './AuditLogAction.entity';
@@ -18,13 +19,13 @@ export class AuditLog {
 
   @ManyToOne(() => ServerMember, (member) => member.targeted_audit_logs)
   @JoinColumn()
-  targeted_member?: ServerMember;
+  targeted_member?: Relation<ServerMember>;
 
   @ManyToOne(() => ServerMember, (member) => member.audit_logs)
   @JoinColumn()
-  created_by: ServerMember;
+  created_by: Relation<ServerMember>;
 
   @ManyToOne(() => AuditLogAction, (action) => action.logs)
   @JoinColumn()
-  action: AuditLogAction;
+  action: Relation<AuditLogAction>;
 }
