@@ -16,4 +16,11 @@ export class AuthRequest {
 
   @Column()
   codeChallengeMethod: string;
+
+  @Column('uuid')
+  userId: string;
+
+  constructor(partial: Partial<AuthRequest>) {
+    Object.assign(this, partial);
+  }
 }
