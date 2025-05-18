@@ -12,6 +12,7 @@ import { ServerThread } from './models/ServerThread.entity';
 import { Suspension } from './models/Suspension.entity';
 import { ThreadMessage } from './models/ThreadMessage.entity';
 import { User } from './models/User.entity';
+import { AuthRequest } from './models/AuthRequest.entity';
 
 export default TypeOrmModule.forRootAsync({
   imports: [ConfigModule],
@@ -35,6 +36,7 @@ export default TypeOrmModule.forRootAsync({
       Suspension,
       ThreadMessage,
       User,
+      AuthRequest,
     ],
     // autoLoadEntities: true,
 
