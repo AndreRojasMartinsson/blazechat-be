@@ -4,88 +4,162 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  NotAcceptableException,
   Post,
   Query,
+  Req,
   Res,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { SignInDTO, SignUpDTO } from './schemas';
-import { FastifyReply } from 'fastify';
+import { FastifyReply, FastifyRequest } from 'fastify';
 import { Public } from './auth.guard';
 import { AllowSuspended } from 'src/users/suspension.guard';
 import { CookieSerializeOptions } from '@fastify/cookie';
+import { SignInDto, SignUpDto } from 'src/schemas/Auth';
+import { randomBytes } from 'node:crypto';
+import { CsrfGuard } from './csrf.guard';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  private static DEFAULT_COOKIE_OPTIONS: CookieSerializeOptions = {
-    httpOnly: true,
-    secure: false,
-    sameSite: 'lax',
-    path: '/',
-  };
+  private getDefaultCookieOpts(): CookieSerializeOptions {
+    return {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production' ? true : false,
+      sameSite: 'lax',
+      signed: true,
+      path: '/',
+    };
+  }
 
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   @Post('/login')
   @Public()
   @AllowSuspended()
+  @UseGuards(CsrfGuard)
   async signIn(
     @Res({ passthrough: true }) response: FastifyReply,
-    @Body() payload: SignInDTO,
+    @Body() payload: SignInDto,
   ) {
-    const { access, refresh } = await this.authService.signIn(
+    const user = await this.authService.signIn(
       payload.username,
       payload.password,
     );
 
-    response.setCookie('blaze_rt', refresh, {
+    // Mint new refresh token and store in database and cookies
+    // Note: Storing refresh token also invalidates previous tokens
+    const refreshToken = await this.authService.createRefreshToken();
+
+    await this.authService.storeRefreshToken(refreshToken, user.id);
+
+    response.setCookie('blaze_refresh', refreshToken, {
       maxAge: 14 * 24 * 60 * 60,
-      ...AuthController.DEFAULT_COOKIE_OPTIONS,
+      ...this.getDefaultCookieOpts(),
     });
 
-    response.setCookie('blaze_at', access, {
-      maxAge: 3600,
-      ...AuthController.DEFAULT_COOKIE_OPTIONS,
-    });
+    // Mint new access token
+    const accessToken = await this.authService.createAccessToken(user.id);
+
+    return {
+      access_token: accessToken,
+      token_type: 'Bearer',
+      expires_in: 3600,
+    };
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/csrf-token')
+  @Public()
+  @AllowSuspended()
+  async getCsrfToken(@Req() request: FastifyRequest) {
+    const session = request.session;
+
+    if (!session.get('csrfToken')) {
+      const token = randomBytes(32).toString('hex');
+      session.set('csrfToken', token);
+    }
+
+    return { csrf_token: session.get('csrfToken') };
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)
   @Post('/register')
   @Public()
   @AllowSuspended()
-  async signUp(@Body() dto: SignUpDTO) {
-    await this.authService.signUp(dto, 'http://localhost:3000/');
+  @UseGuards(CsrfGuard)
+  async signUp(@Body() dto: SignUpDto) {
+    const passwordStrength = this.authService.checkPasswordStrength(
+      dto.password,
+    );
+
+    if (passwordStrength < 1 || dto.password.length < 8) {
+      throw new NotAcceptableException(
+        'Password is too weak, please consider using stronger password.',
+      );
+    }
+
+    await this.authService.signUp(dto);
   }
 
   @HttpCode(HttpStatus.FOUND)
-  @Get('/verify')
+  @Get('/callback')
   @Public()
   @AllowSuspended()
   async verifyEmail(
     @Res({ passthrough: true }) response: FastifyReply,
     @Query('t') token: string,
-    @Query('redirect') redirectUri: string,
+    @Query('redirect_uri') redirectUri: string,
   ) {
     if (typeof token !== 'string') throw new UnauthorizedException();
 
+    const url = new URL(redirectUri);
+    url.searchParams.set('email_verified', 'y');
+
     const user = await this.authService.verifyEmailToken(token);
-    const [access, refresh] = await Promise.all([
-      this.authService.createAccessToken(user.id),
-      this.authService.createRefreshToken(user),
-    ]);
+    if (!user) throw new UnauthorizedException();
 
-    response.setCookie('blaze_rt', refresh, {
+    return response.status(HttpStatus.FOUND).redirect(url.toString());
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('/refresh')
+  @Public()
+  @AllowSuspended()
+  @UseGuards(CsrfGuard)
+  async refreshAccessToken(
+    @Req()
+    request: FastifyRequest,
+    @Res({ passthrough: true })
+    response: FastifyReply,
+  ) {
+    // Get and verify refresh token
+    const jwt = request.cookies?.['blaze_refresh'] ?? '';
+    const token = await this.authService.verifyRefreshToken(jwt);
+
+    // If invalid refresh token we throw unauthorized.
+    if (!token) throw new UnauthorizedException();
+
+    // Mint new refresh token and store in database and cookies
+    // Note: Storing refresh token also invalidates previous tokens
+    const refreshToken = await this.authService.createRefreshToken();
+
+    await this.authService.storeRefreshToken(refreshToken, token.user.id);
+
+    response.setCookie('blaze_refresh', refreshToken, {
       maxAge: 14 * 24 * 60 * 60,
-      ...AuthController.DEFAULT_COOKIE_OPTIONS,
+      ...this.getDefaultCookieOpts(),
     });
 
-    response.setCookie('blaze_at', access, {
-      maxAge: 3600,
-      ...AuthController.DEFAULT_COOKIE_OPTIONS,
-    });
+    // Mint new access token
+    const accessToken = await this.authService.createAccessToken(token.user.id);
 
-    return response.status(HttpStatus.FOUND).redirect(redirectUri);
+    return {
+      access_token: accessToken,
+      token_type: 'Bearer',
+      expires_in: 3600,
+    };
   }
 }

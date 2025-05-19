@@ -69,10 +69,8 @@ export class EmailProcessor extends WorkerHost {
   }
 
   private async sendConfirmEmail(payload: { user: User; redirect: string }) {
-    const verificationUrl = `${this.siteUrl}/v1/auth/verify?t=${encodeURIComponent(payload.user.email_verification_token!)}&redirect=${payload.redirect}`;
-
     const src = await this.parseTemplate('confirm-email', {
-      URL: verificationUrl,
+      URL: payload.redirect,
       EMAIL: payload.user.email,
       USERNAME: payload.user.username,
     });

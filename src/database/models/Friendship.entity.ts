@@ -8,11 +8,7 @@ import {
 } from 'typeorm';
 import { User } from './User.entity';
 
-export enum FriendshipStatus {
-  PENDING = 'pending',
-  ACCEPTED = 'accepted',
-  BLOCKED = 'blocked',
-}
+export type FriendshipStatus = 'pending' | 'accepted' | 'blocked';
 
 @Entity()
 export class Friendship {
@@ -32,8 +28,8 @@ export class Friendship {
 
   @Column({
     type: 'enum',
-    enum: FriendshipStatus,
-    default: FriendshipStatus.PENDING,
+    enum: ['pending', 'accepted', 'blocked'],
+    default: 'pending',
   })
   status: FriendshipStatus;
 }

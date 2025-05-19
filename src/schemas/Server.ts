@@ -8,7 +8,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { Permission } from 'src/database/models/ServerRole.entity';
+import { PermissionType } from 'src/database/models/ServerRole.entity';
 
 export class ServerInDto {
   @ApiProperty()
@@ -26,7 +26,7 @@ export class ServerUpdateDto {
   name: string;
 }
 
-export class ServerRoleDTO {
+export class ServerRoleDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
@@ -41,5 +41,5 @@ export class ServerRoleDTO {
   @ApiProperty()
   @IsNumber()
   @IsNotEmpty()
-  permissions: Permission;
+  permissions: PermissionType;
 }

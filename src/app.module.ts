@@ -31,6 +31,7 @@ import { UploadModule } from './upload/upload.module';
 import { MetricsModule } from './metrics/metrics.module';
 import redisConfig from './config/redis.config';
 import redisQueueConfig from './config/redis-queue.config';
+import { CsrfGuard } from './auth/csrf.guard';
 
 @Module({
   imports: [

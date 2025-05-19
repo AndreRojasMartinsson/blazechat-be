@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   NotAcceptableException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
@@ -14,20 +15,28 @@ import { User } from 'src/database/models/User.entity';
 import { randomBytes } from 'node:crypto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
-import { SignUpDTO } from './schemas';
 import { EmailService } from 'src/email/email.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import {
+  JwtUserPayload,
+  JwtUserPayloadSchema,
+  SignUpDto,
+} from 'src/schemas/Auth';
+import { RefreshToken } from 'src/database/models/RefreshToken.entity';
+import { DateTime } from 'luxon';
 
 @Injectable()
 export class AuthService {
   constructor(
     private emailService: EmailService,
     private usersService: UsersService,
+    @InjectRepository(RefreshToken)
+    private refreshTokenRepo: Repository<RefreshToken>,
     private configService: ConfigService,
-    @Inject(CACHE_MANAGER)
-    private cacheManager: Cache,
   ) {}
 
-  async createAccessToken(userId: string): Promise<string> {
+  async createAccessToken(userId: string | undefined): Promise<string> {
     const jwtSecret = this.configService.getOrThrow<string>('secrets.jwt');
     const timestampNow = secondsSinceEpoch();
 
@@ -43,68 +52,74 @@ export class AuthService {
     );
   }
 
+  async storeRefreshToken(token: string, userId: string) {
+    const user = await this.usersService.findOne(userId);
+    if (user === null) throw new NotFoundException();
+
+    const row = new RefreshToken({
+      user,
+      token,
+    });
+
+    await this.refreshTokenRepo.update(
+      {
+        user: { id: userId },
+        invalidated: undefined,
+      },
+      {
+        invalidated: new Date(Date.now()),
+      },
+    );
+
+    return this.refreshTokenRepo.save(row);
+  }
+
   createEmailToken(): string {
     const token = randomBytes(42).toString('hex');
 
     return token;
   }
 
-  async createRefreshToken(user: User): Promise<string> {
-    const token = randomBytes(128).toString('hex');
+  async createRefreshToken(): Promise<string> {
+    return randomBytes(128).toString('hex');
+  }
 
-    const existingRefreshToken = await this.cacheManager.get(`rt_${user.id}`);
+  async verifyRefreshToken(refreshToken: string): Promise<RefreshToken | null> {
+    const token = await this.refreshTokenRepo.findOne({
+      where: {
+        token: refreshToken,
+      },
+      relations: {
+        user: true,
+      },
+    });
 
-    // Delete previous token back reference
-    if (typeof existingRefreshToken === 'string') {
-      await this.cacheManager.del(`rt_backref_${existingRefreshToken}`);
-    }
+    if (token?.invalidated === undefined) return null;
 
-    await this.cacheManager.set(
-      `rt_${user.id}`,
-      token,
-      14 * 24 * 60 * 60 * 1000,
-    );
-    await this.cacheManager.set(
-      `rt_backref_${token}`,
-      user.id,
-      14 * 24 * 60 * 60 * 1000,
-    );
+    const invalidated = DateTime.fromJSDate(token.invalidated);
+    if (invalidated < DateTime.now()) return null;
 
     return token;
-  }
-
-  async verifyRefreshToken(refreshToken: string): Promise<string | null> {
-    return this.cacheManager.get<string>(`rt_backref_${refreshToken}`);
-  }
-
-  async isValidRefreshToken(refreshToken: string): Promise<boolean>;
-  async isValidRefreshToken(user: User, refreshToken: string): Promise<boolean>;
-  async isValidRefreshToken(
-    param: string | User,
-    token?: string,
-  ): Promise<boolean> {
-    if (typeof param === 'string') {
-      const refreshToken = param;
-      const dbToken = await this.cacheManager.get(`rt_backref_${refreshToken}`);
-
-      return dbToken !== undefined;
-    } else {
-      const user = param;
-
-      const dbToken = await this.cacheManager.get(`rt_${user.id}`);
-      if (typeof dbToken !== 'string') return false;
-
-      return dbToken === token!;
-    }
   }
 
   async getUserIdFromRefreshToken(
     refreshToken: string,
   ): Promise<string | undefined> {
-    const dbToken = await this.cacheManager.get(`rt_backref_${refreshToken}`);
-    if (dbToken === undefined || typeof dbToken !== 'string') return undefined;
+    return this.refreshTokenRepo
+      .findOne({
+        select: {
+          user: { id: true },
+        },
+        where: {
+          invalidated: undefined,
+          token: refreshToken,
+        },
+      })
+      .then((value) => {
+        if (value === null) return undefined;
 
-    return dbToken;
+        return value.user.id;
+      });
   }
 
   async getAccessToken(refreshToken: string): Promise<string | undefined> {
@@ -115,7 +130,7 @@ export class AuthService {
     return access;
   }
 
-  async verify_password(
+  async verifyPassword(
     password: string,
     hashed_password: string,
   ): Promise<boolean> {
@@ -148,24 +163,16 @@ export class AuthService {
     return hashed;
   }
 
-  async signIn(
-    username: string,
-    password: string,
-  ): Promise<{ access: string; refresh: string }> {
+  async signIn(username: string, password: string): Promise<User> {
     const user = await this.usersService.findByName(username);
     const dbPassword = user?.hashed_password;
 
     if (!dbPassword) throw new UnauthorizedException();
 
-    const isValid = this.verify_password(password, dbPassword);
+    const isValid = this.verifyPassword(password, dbPassword);
     if (!isValid) throw new UnauthorizedException();
 
-    const [access, refresh] = await Promise.all([
-      this.createAccessToken(user.id),
-      this.createRefreshToken(user),
-    ]);
-
-    return { access, refresh };
+    return user;
   }
 
   checkPasswordStrength(password: string): number {
@@ -214,39 +221,58 @@ export class AuthService {
     return penalty;
   }
 
-  async verifyEmailToken(token: string): Promise<User> {
+  async verifyAccessToken(token: string): Promise<JwtUserPayload | undefined> {
+    const jwtSecret = this.configService.getOrThrow<string>('secrets.jwt');
+
+    try {
+      const payload = await jwt.verify(token, jwtSecret, {
+        aud: ['https://blazechat.se'],
+        iss: ['blazechat.se-prod'],
+        validateExp: true,
+      });
+
+      return JwtUserPayloadSchema.parse(payload);
+    } catch {
+      return undefined;
+    }
+  }
+
+  async verifyEmailToken(token: string): Promise<User | undefined> {
     const user = await this.usersService.findOneByEmailToken(token);
-    if (!user) throw new UnauthorizedException();
+    if (!user) return undefined;
 
     await this.usersService.confirmEmail(user);
 
     return user;
   }
 
-  async signUp(dto: SignUpDTO, redirect: string): Promise<User> {
-    const passwordStrength = this.checkPasswordStrength(dto.password);
-    if (passwordStrength < 1 || dto.password.length < 8)
-      throw new NotAcceptableException(
-        'Password is too weak, please consider using stronger password.',
-      );
-
+  async signUp(dto: SignUpDto) {
     const exists = await this.usersService.doesAccountExist(
       dto.email,
       dto.username,
     );
+
     if (exists) throw new ConflictException();
 
     const hashedPassword = await this.hash(dto.password);
 
     const emailToken = this.createEmailToken();
+
     const user = await this.usersService.createUser(
       dto,
       hashedPassword,
       emailToken,
     );
 
-    await this.emailService.addToQueue('confirm-email', { user, redirect });
+    const siteUrl = this.configService.getOrThrow<string>('secrets.api_url');
+    const link = new URL(`${siteUrl}/v1/auth/callback`);
 
-    return user;
+    link.searchParams.set('t', emailToken);
+    link.searchParams.set('redirect_uri', dto.redirectUri);
+
+    await this.emailService.addToQueue('confirm-email', {
+      user,
+      redirect: link.toString(),
+    });
   }
 }

@@ -3,13 +3,13 @@ import eslint from '@eslint/js';
 import eslintConfigPrettier from 'eslint-config-prettier/flat';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
-import unusedImports from "eslint-plugin-unused-imports"
+import unusedImports from 'eslint-plugin-unused-imports';
 
 export default tseslint.config(
   {
     ignores: ['eslint.config.mjs'],
     plugins: {
-      "unused-imports": unusedImports
+      'unused-imports': unusedImports,
     },
   },
   eslint.configs.recommended,
@@ -35,4 +35,3 @@ export default tseslint.config(
   },
   eslintConfigPrettier,
 );
-

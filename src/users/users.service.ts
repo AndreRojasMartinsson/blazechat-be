@@ -4,11 +4,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { SignUpDTO } from 'src/auth/schemas';
 import { PendingDeletion } from 'src/database/models/PendingDeletion.entity';
 import { Server } from 'src/database/models/Server.entity';
 import { Suspension } from 'src/database/models/Suspension.entity';
 import { User } from 'src/database/models/User.entity';
+import { SignUpDto } from 'src/schemas/Auth';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -62,7 +62,7 @@ export class UsersService {
   }
 
   async createUser(
-    dto: SignUpDTO,
+    dto: SignUpDto,
     hashedPassword: string,
     emailToken: string,
   ): Promise<User> {

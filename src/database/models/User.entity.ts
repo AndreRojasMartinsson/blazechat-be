@@ -3,12 +3,9 @@ import { Suspension } from './Suspension.entity';
 import { Exclude } from 'class-transformer';
 import { Server } from './Server.entity';
 import { ServerMember } from './ServerMember.entity';
+import { RefreshToken } from './RefreshToken.entity';
 
-export enum UserRole {
-  ADMIN = 'admin',
-  REGULAR = 'regular',
-  ROOT = 'root',
-}
+export type UserRole = 'root' | 'admin' | 'regular';
 
 @Entity()
 export class User {
@@ -36,10 +33,13 @@ export class User {
   @Exclude()
   email_verification_token?: string;
 
+  @OneToMany(() => RefreshToken, (token) => token.user)
+  refresh_tokens: RefreshToken[];
+
   @Column({
     type: 'enum',
-    enum: UserRole,
-    default: UserRole.REGULAR,
+    enum: ['root', 'admin', 'regular'],
+    default: 'regular',
   })
   role: UserRole;
 

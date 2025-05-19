@@ -10,12 +10,11 @@ import {
   Param,
   Post,
   Put,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { ServersService } from './servers.service';
 import { HttpStatusCode } from 'axios';
 import { AccessToken } from 'src/utils/request';
-import { JwtUserPayload } from 'src/auth/schemas';
+import { JwtUserPayload } from 'src/schemas/Auth';
 import { ServerMember } from 'src/database/models/ServerMember.entity';
 import { LoggerService } from 'src/logger/logger.service';
 import { UsersService } from 'src/users/users.service';

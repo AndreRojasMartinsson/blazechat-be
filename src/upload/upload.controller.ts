@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { UploadService } from './upload.service';
 import { AccessToken } from 'src/utils/request';
-import { JwtUserPayload } from 'src/auth/schemas';
+import { JwtUserPayload } from 'src/schemas/Auth';
 import { File, FileInterceptor } from '@nest-lab/fastify-multer';
 
 @Controller('upload')

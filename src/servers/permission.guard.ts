@@ -6,13 +6,13 @@ import {
   SetMetadata,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Permission } from 'src/database/models/ServerRole.entity';
-import { JwtUserPayloadSchema } from 'src/auth/schemas';
+import { PermissionType } from 'src/database/models/ServerRole.entity';
+import { JwtUserPayloadSchema } from 'src/schemas/Auth';
 import z from 'zod';
 import { ServersService } from './servers.service';
 
 export const PERMISSION_KEY = 'required_permissions';
-export const Perms = (...permissions: Permission[]) =>
+export const Perms = (...permissions: PermissionType[]) =>
   SetMetadata(PERMISSION_KEY, permissions);
 
 const JwtPayloadRequest = z.object({ user: JwtUserPayloadSchema });
@@ -25,10 +25,9 @@ export class PermissionGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredPermissions = this.reflector.getAllAndOverride<Permission[]>(
-      PERMISSION_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const requiredPermissions = this.reflector.getAllAndOverride<
+      PermissionType[]
+    >(PERMISSION_KEY, [context.getHandler(), context.getClass()]);
 
     if (!requiredPermissions || requiredPermissions.length === 0) return true;
 

@@ -1,12 +1,19 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Server } from 'src/database/models/Server.entity';
-import { Permission, ServerRole } from 'src/database/models/ServerRole.entity';
+import {
+  PermissionType,
+  ServerRole,
+} from 'src/database/models/ServerRole.entity';
 import { Brackets, Repository } from 'typeorm';
 import { User } from 'src/database/models/User.entity';
 import { ServerMember } from 'src/database/models/ServerMember.entity';
 import { MemberRole } from 'src/database/models/MemberRole.entity';
-import { ServerInDto, ServerUpdateDto } from 'src/schemas/Server';
+import {
+  ServerInDto,
+  ServerRoleDto,
+  ServerUpdateDto,
+} from 'src/schemas/Server';
 
 @Injectable()
 export class ServersService {
@@ -200,7 +207,7 @@ export class ServersService {
    */
   async createServerRole(
     server: Server,
-    roleIn: ServerRoleDTO,
+    roleIn: ServerRoleDto,
   ): Promise<ServerRole> {
     const row = new ServerRole({
       server,
@@ -216,7 +223,7 @@ export class ServersService {
    * @param roleId - Id of role to update
    * @param roleIn - Object to patch role with
    */
-  async updateServerRole(roleId: string, roleIn: ServerRoleDTO) {
+  async updateServerRole(roleId: string, roleIn: ServerRoleDto) {
     await this.serverRole.update(
       {
         id: roleId,
@@ -312,7 +319,7 @@ export class ServersService {
    */
   async doesMemberHavePermission(
     memberId: string,
-    permission: Permission,
+    permission: PermissionType,
   ): Promise<boolean> {
     const memberPerms = await this.getMemberPermissions(memberId);
 

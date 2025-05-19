@@ -12,6 +12,8 @@ import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from '@fastify/helmet';
 import fastifyMultipart from '@fastify/multipart';
+import fastifyCsrfProtection from '@fastify/csrf-protection';
+import fastifySession from '@fastify/secure-session';
 
 declare const module: any;
 
@@ -49,9 +51,19 @@ async function bootstrap() {
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, documentFactory);
 
+  await app.register(fastifyCsrfProtection, {
+    cookieOpts: { httpOnly: true, sameSite: 'lax', path: '/', signed: true },
+  });
+
   await app.register(fastifyCookie, {
-    parseOptions: { httpOnly: true, sameSite: 'lax', secure: false, path: '/' },
+    parseOptions: { httpOnly: true, sameSite: 'lax', signed: true, path: '/' },
     secret: configService.getOrThrow<string>('secrets.cookie'),
+  });
+
+  await app.register(fastifySession, {
+    salt: configService.getOrThrow<string>('secrets.salt'),
+    secret: configService.getOrThrow<string>('secrets.session'),
+    cookie: { httpOnly: true, sameSite: 'lax', path: '/', signed: true },
   });
 
   await app.register(fastifyMultipart);
@@ -85,3 +97,9 @@ async function bootstrap() {
 }
 
 bootstrap().catch(console.error);
+
+declare module '@fastify/secure-session' {
+  interface SessionData {
+    csrfToken: string;
+  }
+}

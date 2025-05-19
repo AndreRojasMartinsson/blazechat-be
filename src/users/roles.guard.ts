@@ -9,7 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { UsersService } from './users.service';
 import { UserRole } from 'src/database/models/User.entity';
 import z from 'zod';
-import { JwtUserPayloadSchema } from 'src/auth/schemas';
+import { JwtUserPayloadSchema } from 'src/schemas/Auth';
 
 const JwtPayloadRequest = z.object({ user: JwtUserPayloadSchema });
 

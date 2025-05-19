@@ -10,13 +10,13 @@ import {
   Post,
   UnauthorizedException,
 } from '@nestjs/common';
-import { User, UserRole } from 'src/database/models/User.entity';
+import { User } from 'src/database/models/User.entity';
 import { UsersService } from './users.service';
 import { AccessToken } from 'src/utils/request';
 import { Roles } from './roles.guard';
 import { SuspendUserDTO } from './schema';
 import { AllowSuspended } from './suspension.guard';
-import { JwtUserPayload } from 'src/auth/schemas';
+import { JwtUserPayload } from 'src/schemas/Auth';
 import { ServersService } from 'src/servers/servers.service';
 import { ServerMember } from 'src/database/models/ServerMember.entity';
 
@@ -80,13 +80,13 @@ export class UsersController {
   }
 
   @Delete('/:id')
-  @Roles(UserRole.ROOT, UserRole.ADMIN)
+  @Roles('root', 'admin')
   async deleteUser(@Param('id') userId: string) {
     return this.usersService.deleteUser(userId);
   }
 
   @Post('/suspend/:id')
-  @Roles(UserRole.ROOT, UserRole.ADMIN)
+  @Roles('root', 'admin')
   @AllowSuspended()
   async suspendUser(
     @AccessToken() payload: JwtUserPayload,

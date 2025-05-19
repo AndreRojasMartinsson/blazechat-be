@@ -7,12 +7,12 @@ import {
 } from '@nestjs/common';
 import { FastifyRequest } from 'fastify';
 import { Reflector } from '@nestjs/core';
-import { JwtUserPayload } from './schemas';
 import { AuthService } from './auth.service';
+import { JwtUserPayload } from 'src/schemas/Auth';
 
-type Request = FastifyRequest & {
+interface Request extends FastifyRequest {
   user: JwtUserPayload;
-};
+}
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -37,6 +37,7 @@ export class AuthGuard implements CanActivate {
     if (!accessPayload) throw new UnauthorizedException();
 
     request['user'] = accessPayload;
+
     return true;
   }
 

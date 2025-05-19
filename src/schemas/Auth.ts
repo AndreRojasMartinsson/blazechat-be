@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEmail,
   IsNotEmpty,
@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 import * as z from 'zod';
 
-export class SignInDTO {
+export class SignInDto {
   @IsNotEmpty()
   @IsString()
   @Matches(/^(?!.*_.*_)(?!_)(?!.*_$)[A-Za-z0-9_]+$/g)
@@ -22,7 +22,7 @@ export class SignInDTO {
   password: string;
 }
 
-export class SignUpDTO {
+export class SignUpDto {
   @ApiProperty()
   @IsNotEmpty()
   @IsString()
@@ -42,6 +42,11 @@ export class SignUpDTO {
   @MaxLength(512)
   @IsString()
   password: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  redirectUri: string;
 }
 
 export const JwtUserPayloadSchema = z.strictObject({
